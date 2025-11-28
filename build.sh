@@ -8,7 +8,7 @@ show_help() {
 backstorie v$VERSION
 Terminal engine with sophisticated input parsing
 
-Usage: ./compile.sh [OPTIONS] [FILE]
+Usage: ./build.sh [OPTIONS] [FILE]
 
 Arguments:
   FILE                   Nim file to run (default: index.nim)
@@ -21,11 +21,11 @@ Options:
   -c, --compile-only    Compile without running
 
 Examples:
-  ./compile.sh                           # Run index.nim
-  ./compile.sh example_boxes             # Run example_boxes.nim
-  ./compile.sh plugins/simple_counter    # Run plugins/simple_counter.nim
-  ./compile.sh -r example_boxes          # Compile optimized and run
-  ./compile.sh -c example_boxes          # Compile only, don't run
+  ./build.sh                           # Run index.nim
+  ./build.sh example_boxes             # Run example_boxes.nim
+  ./build.sh plugins/simple_counter    # Run plugins/simple_counter.nim
+  ./build.sh -r example_boxes          # Compile optimized and run
+  ./build.sh -c example_boxes          # Compile only, don't run
 
 EOF
 }

@@ -977,9 +977,9 @@ var _emInit,
   _emHandleTextInput,
   _emHandleMouseClick,
   _emHandleMouseMove,
-  _emscripten_builtin_memalign,
-  _malloc,
   _free,
+  _malloc,
+  _emscripten_builtin_memalign,
   __emscripten_stack_restore,
   __emscripten_stack_alloc,
   _emscripten_stack_get_current,
@@ -1006,9 +1006,9 @@ function assignWasmExports(wasmExports) {
   _emHandleTextInput = Module['_emHandleTextInput'] = wasmExports['emHandleTextInput'];
   _emHandleMouseClick = Module['_emHandleMouseClick'] = wasmExports['emHandleMouseClick'];
   _emHandleMouseMove = Module['_emHandleMouseMove'] = wasmExports['emHandleMouseMove'];
-  _emscripten_builtin_memalign = wasmExports['emscripten_builtin_memalign'];
-  _malloc = Module['_malloc'] = wasmExports['malloc'];
   _free = Module['_free'] = wasmExports['free'];
+  _malloc = Module['_malloc'] = wasmExports['malloc'];
+  _emscripten_builtin_memalign = wasmExports['emscripten_builtin_memalign'];
   __emscripten_stack_restore = wasmExports['_emscripten_stack_restore'];
   __emscripten_stack_alloc = wasmExports['_emscripten_stack_alloc'];
   _emscripten_stack_get_current = wasmExports['emscripten_stack_get_current'];

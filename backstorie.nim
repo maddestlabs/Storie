@@ -965,80 +965,49 @@ when not defined(emscripten):
 
 when defined(emscripten):
   var globalState: AppState
-  # Define callbacks directly as procs (not proc variables)
+  
+  # For WASM builds, we need to include the user file logic
+  # Define callback variables (proc variables) like native builds
+  var onInit*: proc(state: AppState) = nil
+  var onUpdate*: proc(state: AppState, dt: float) = nil
+  var onRender*: proc(state: AppState) = nil
+  var onShutdown*: proc(state: AppState) = nil
+  var onInput*: proc(state: AppState, event: InputEvent): bool = nil
+  
+  # Include user-specified file or default to index.nim at compile time
+  const userFile {.strdefine.} = "index"
+  
+  # Macro to dynamically include file based on compile-time string
+  macro includeUserFile(filename: static[string]): untyped =
+    let file = if filename.endsWith(".nim"): filename else: filename & ".nim"
+    if not fileExists(file):
+      error("File not found: " & file & ". Create the file or specify a different one with -d:userFile=<filename>")
+    result = newNimNode(nnkIncludeStmt)
+    result.add(newIdentNode(file.replace(".nim", "")))
+  
+  includeUserFile(userFile)
+  
+  # Define callback wrapper procs that call the user-defined callbacks
   proc userInit(state: AppState) =
-    discard
+    if not onInit.isNil:
+      onInit(state)
 
   proc userUpdate(state: AppState, dt: float) =
-    discard
+    if not onUpdate.isNil:
+      onUpdate(state, dt)
 
   proc userRender(state: AppState) =
-    # Clear the screen
-    state.currentBuffer.clear()
-    
-    let w = state.termWidth
-    let h = state.termHeight
-    
-    # Define styles
-    var borderStyle = defaultStyle()
-    borderStyle.fg = green()
-    
-    var welcomeStyle = defaultStyle()
-    welcomeStyle.fg = cyan()
-    welcomeStyle.bold = true
-    
-    var infoStyle = defaultStyle()
-    infoStyle.fg = yellow()
-    
-    var hintStyle = defaultStyle()
-    hintStyle.fg = gray(180)
-    
-    # Draw border box using box drawing characters
-    # Top border
-    state.currentBuffer.write(0, 0, "╔", borderStyle)
-    for x in 1 ..< w - 1:
-      state.currentBuffer.write(x, 0, "═", borderStyle)
-    state.currentBuffer.write(w - 1, 0, "╗", borderStyle)
-    
-    # Side borders
-    for y in 1 ..< h - 1:
-      state.currentBuffer.write(0, y, "║", borderStyle)
-      state.currentBuffer.write(w - 1, y, "║", borderStyle)
-    
-    # Bottom border
-    state.currentBuffer.write(0, h - 1, "╚", borderStyle)
-    for x in 1 ..< w - 1:
-      state.currentBuffer.write(x, h - 1, "═", borderStyle)
-    state.currentBuffer.write(w - 1, h - 1, "╝", borderStyle)
-    
-    # Calculate center position
-    let centerY = h div 2
-    
-    # Welcome message
-    let welcomeMsg = "Welcome to Backstorie engine!"
-    let welcomeX = (w - welcomeMsg.len) div 2
-    state.currentBuffer.writeText(welcomeX, centerY - 2, welcomeMsg, welcomeStyle)
-    
-    # Display dimensions and FPS
-    let infoMsg = "Window: " & $w & "x" & $h & " | FPS: " & formatFloat(state.fps, ffDecimal, 1)
-    let infoX = (w - infoMsg.len) div 2
-    state.currentBuffer.writeText(infoX, centerY, infoMsg, infoStyle)
-    
-    # Exit hint
-    let hintMsg = "Press Q or ESC to quit."
-    let hintX = (w - hintMsg.len) div 2
-    state.currentBuffer.writeText(hintX, centerY + 2, hintMsg, hintStyle)
+    if not onRender.isNil:
+      onRender(state)
 
   proc userInput(state: AppState, event: InputEvent): bool =
-    if event.kind == KeyEvent and event.keyAction == Press:
-      # Check for Q key or ESC key
-      if event.keyCode == ord('q') or event.keyCode == ord('Q') or event.keyCode == INPUT_ESCAPE:
-        state.running = false
-        return true
+    if not onInput.isNil:
+      return onInput(state, event)
     return false
 
   proc userShutdown(state: AppState) =
-    discard
+    if not onShutdown.isNil:
+      onShutdown(state)
   
   proc emInit(width, height: int) {.exportc.} =
     globalState = new(AppState)
