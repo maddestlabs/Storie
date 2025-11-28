@@ -2,7 +2,7 @@
 # Parses index.md for Nim code blocks and executes them using Nimini
 
 import strutils, tables, os
-import nimini/[runtime, tokenizer, parser]
+import src/nimini/[runtime, tokenizer, parser, autopragma]
 
 # ================================================================
 # MARKDOWN PARSER
@@ -66,9 +66,6 @@ type
 # ================================================================
 # NIMINI WRAPPERS - Bridge backstorie functions to Nimini
 # ================================================================
-
-# Import autopragma for {.nimini.} support
-import nimini/autopragma
 
 # Global references to layers (set in initStorieContext)
 var gBgLayer: Layer
