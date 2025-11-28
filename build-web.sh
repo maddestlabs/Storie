@@ -8,7 +8,7 @@ show_help() {
 backstorie WASM compiler v$VERSION
 Compile Backstorie for web deployment
 
-Usage: ./compile_wasm.sh [OPTIONS] [FILE]
+Usage: ./build-web.sh [OPTIONS] [FILE]
 
 Arguments:
   FILE                   Nim file to compile (default: index.nim)
@@ -22,12 +22,12 @@ Options:
   -o, --output DIR      Output directory (default: web)
 
 Examples:
-  ./compile_wasm.sh                          # Compile index.nim to WASM
-  ./compile_wasm.sh example_boxes            # Compile example_boxes.nim to WASM
-  ./compile_wasm.sh -r example_boxes         # Compile optimized
-  ./compile_wasm.sh -s                       # Compile and serve
-  ./compile_wasm.sh -o docs                  # Output to docs/ (for GitHub Pages)
-  ./compile_wasm.sh -o .                     # Output to root directory
+  ./build-web.sh                          # Compile index.nim to WASM
+  ./build-web.sh example_boxes            # Compile example_boxes.nim to WASM
+  ./build-web.sh -r example_boxes         # Compile optimized
+  ./build-web.sh -s                       # Compile and serve
+  ./build-web.sh -o docs                  # Output to docs/ (for GitHub Pages)
+  ./build-web.sh -o .                     # Output to root directory
 
 The compiled files will be placed in the specified output directory.
 
@@ -48,7 +48,7 @@ EOF
 RELEASE_MODE=""
 SERVE=false
 USER_FILE=""
-OUTPUT_DIR="web"
+OUTPUT_DIR="docs"
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
