@@ -743,7 +743,8 @@ proc compositeBufferOnto*(dest: var TermBuffer, src: TermBuffer) =
     let sr = y * src.width
     for x in 0 ..< w:
       let s = src.cells[sr + x]
-      if s.ch.len > 0:
+      # Composite if there's a character OR if there's a non-black background
+      if s.ch.len > 0 or (s.style.bg.r != 0 or s.style.bg.g != 0 or s.style.bg.b != 0):
         dest.cells[dr + x] = s
 
 # ================================================================
@@ -965,6 +966,8 @@ when not defined(emscripten):
 
 when defined(emscripten):
   var globalState: AppState
+  var lastRenderExecutedCount*: int = -1
+  var lastError*: string = ""
   
   # For WASM builds, we need to include the user file logic
   # Define callback variables (proc variables) like native builds
@@ -999,6 +1002,33 @@ when defined(emscripten):
   proc userRender(state: AppState) =
     if not onRender.isNil:
       onRender(state)
+  
+  # Direct render caller for WASM
+  proc renderStorie(state: AppState) =
+    # Call the render logic from index.nim directly
+    if storieCtx.isNil:
+      return
+    
+    # Check if we have any render blocks
+    var hasRenderBlocks = false
+    var renderBlockCount = 0
+    for codeBlock in storieCtx.codeBlocks:
+      if codeBlock.lifecycle == "render":
+        hasRenderBlocks = true
+        renderBlockCount += 1
+    
+    if not hasRenderBlocks:
+      return
+    
+    # Execute render code blocks - they write to layers
+    var executedCount = 0
+    for codeBlock in storieCtx.codeBlocks:
+      if codeBlock.lifecycle == "render":
+        let success = executeCodeBlock(storieCtx.niminiContext, codeBlock, state)
+        if success:
+          executedCount += 1
+    
+    lastRenderExecutedCount = executedCount
 
   proc userInput(state: AppState, event: InputEvent): bool =
     if not onInput.isNil:
@@ -1024,7 +1054,8 @@ when defined(emscripten):
     globalState.lastMouseY = 0
     globalState.fps = 60.0
     
-    userInit(globalState)
+    # Call initStorieContext directly (callback system doesn't work in WASM)
+    initStorieContext(globalState)
   
   proc emUpdate(deltaMs: float) {.exportc.} =
     let dt = deltaMs / 1000.0
@@ -1035,10 +1066,51 @@ when defined(emscripten):
       globalState.fps = 1.0 / dt
       globalState.lastFpsUpdate = globalState.totalTime
     
-    userUpdate(globalState, dt)
-    userRender(globalState)
+    # Call update directly
+    if not storieCtx.isNil:
+      for codeBlock in storieCtx.codeBlocks:
+        if codeBlock.lifecycle == "update":
+          discard executeCodeBlock(storieCtx.niminiContext, codeBlock, globalState)
     
+    # Clear current buffer before rendering
+    globalState.currentBuffer.clear()
+    
+    # Clear layer buffers each frame
+    if not storieCtx.isNil:
+      if not storieCtx.bgLayer.isNil:
+        storieCtx.bgLayer.buffer.clearTransparent()
+      if not storieCtx.fgLayer.isNil:
+        storieCtx.fgLayer.buffer.clearTransparent()
+    
+    # Call render - this writes to layers
+    renderStorie(globalState)
+
+    # Composite layers onto currentBuffer
     compositeLayers(globalState)
+
+    # Optional: Show minimal debug info at bottom (can be removed)
+    when defined(emscripten):
+      if lastError.len > 0:
+        let hudY = globalState.termHeight - 1
+        var errStyle = defaultStyle()
+        errStyle.fg = red()
+        errStyle.bold = true
+        globalState.currentBuffer.writeText(2, hudY, "Error: " & lastError, errStyle)
+
+      if lastError.len > 0:
+        var errStyle = defaultStyle()
+        errStyle.fg = rgb(255'u8, 255'u8, 0'u8)  # Bright yellow
+        errStyle.bg = black()
+        errStyle.bold = true
+        # Show error on multiple lines if needed
+        var yPos = 8
+        var remaining = lastError
+        while remaining.len > 0:
+          let lineLen = min(globalState.termWidth - 8, remaining.len)
+          globalState.currentBuffer.writeText(4, yPos, "ERR: " & remaining[0 ..< lineLen], errStyle)
+          remaining = if remaining.len > lineLen: remaining[lineLen .. ^1] else: ""
+          yPos += 1
+          if yPos >= globalState.termHeight - 1: break
   
   proc emResize(width, height: int) {.exportc.} =
     globalState.termWidth = width

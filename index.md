@@ -2,7 +2,7 @@
 
 Welcome to Storie! Edit this file to create your interactive terminal app.
 
-``` nim on:render
+```nim on:render
 # Clear the foreground layer each frame
 fgClearTransparent()
 

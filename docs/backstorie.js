@@ -233,6 +233,12 @@ class BackstorieTerminal {
         this.ctx.fillStyle = '#000';
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
+        // Debug first frame
+        if (this.debugFirstFrame) {
+            console.log('First render frame - dimensions:', this.cols, 'x', this.rows);
+            this.debugFirstFrame = false;
+        }
+        
         // Render each cell
         for (let y = 0; y < this.rows; y++) {
             for (let x = 0; x < this.cols; x++) {
@@ -244,7 +250,6 @@ class BackstorieTerminal {
     renderCell(x, y) {
         // Get cell data from WASM
         const ch = Module.UTF8ToString(Module._emGetCell(x, y));
-        if (!ch || ch === '') return;
         
         const fgR = Module._emGetCellFgR(x, y);
         const fgG = Module._emGetCellFgG(x, y);
@@ -261,11 +266,20 @@ class BackstorieTerminal {
         const px = x * this.charWidth;
         const py = y * this.charHeight;
         
-        // Draw background
+        // Debug first non-empty cell
+        if (this.debugFirstCell && (ch !== ' ' && ch !== '')) {
+            console.log(`First non-empty cell at (${x},${y}): "${ch}" fg:rgb(${fgR},${fgG},${fgB}) bg:rgb(${bgR},${bgG},${bgB})`);
+            this.debugFirstCell = false;
+        }
+        
+        // Draw background (always, even if no character)
         if (bgR !== 0 || bgG !== 0 || bgB !== 0) {
             this.ctx.fillStyle = `rgb(${bgR}, ${bgG}, ${bgB})`;
             this.ctx.fillRect(px, py, this.charWidth, this.charHeight);
         }
+        
+        // If no character, we're done
+        if (!ch || ch === '') return;
         
         // Set font style
         let fontStyle = '';
@@ -319,6 +333,8 @@ let terminal = null;
 
 async function initBackstorie() {
     try {
+        console.log('Initializing Backstorie...');
+        
         // Wait for fonts to load
         if (document.fonts && document.fonts.ready) {
             await document.fonts.ready;
@@ -327,14 +343,25 @@ async function initBackstorie() {
         const canvas = document.getElementById('terminal');
         terminal = new BackstorieTerminal(canvas);
         
+        console.log('Terminal created:', terminal.cols, 'x', terminal.rows);
+        
         // Initialize WASM module
         if (Module._emInit) {
+            console.log('Calling Module._emInit...');
             Module._emInit(terminal.cols, terminal.rows);
+            console.log('Module._emInit completed');
         } else {
             throw new Error('Module._emInit not found');
         }
         
+        // Test: Try to read a cell
+        if (Module._emGetCell) {
+            const testCell = Module.UTF8ToString(Module._emGetCell(0, 0));
+            console.log('Test cell at (0,0):', testCell);
+        }
+        
         // Start animation loop
+        console.log('Starting animation loop...');
         terminal.startAnimationLoop();
     } catch (error) {
         console.error('Failed to initialize Backstorie:', error);

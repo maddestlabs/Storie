@@ -4,6 +4,13 @@
 import strutils, tables, os
 import src/nimini/[runtime, tokenizer, parser, autopragma]
 
+# Helper to convert Value to int (handles both int and float values)
+proc valueToInt(v: Value): int =
+  case v.kind
+  of vkInt: return v.i
+  of vkFloat: return int(v.f)
+  else: return 0
+
 # ================================================================
 # MARKDOWN PARSER
 # ================================================================
@@ -143,8 +150,8 @@ proc fgClearTransparent(env: ref Env; args: seq[Value]): Value {.nimini.} =
 
 proc bgWrite(env: ref Env; args: seq[Value]): Value {.nimini.} =
   if args.len >= 3:
-    let x = args[0].i
-    let y = args[1].i
+    let x = valueToInt(args[0])
+    let y = valueToInt(args[1])
     let ch = args[2].s
     let style = if args.len >= 4: gTextStyle else: gTextStyle  # TODO: support style arg
     gBgLayer.buffer.write(x, y, ch, style)
@@ -152,8 +159,8 @@ proc bgWrite(env: ref Env; args: seq[Value]): Value {.nimini.} =
 
 proc fgWrite(env: ref Env; args: seq[Value]): Value {.nimini.} =
   if args.len >= 3:
-    let x = args[0].i
-    let y = args[1].i
+    let x = valueToInt(args[0])
+    let y = valueToInt(args[1])
     let ch = args[2].s
     let style = if args.len >= 4: gTextStyle else: gTextStyle
     gFgLayer.buffer.write(x, y, ch, style)
@@ -161,36 +168,36 @@ proc fgWrite(env: ref Env; args: seq[Value]): Value {.nimini.} =
 
 proc bgWriteText(env: ref Env; args: seq[Value]): Value {.nimini.} =
   if args.len >= 3:
-    let x = args[0].i
-    let y = args[1].i
+    let x = valueToInt(args[0])
+    let y = valueToInt(args[1])
     let text = args[2].s
     gBgLayer.buffer.writeText(x, y, text, gTextStyle)
   return valNil()
 
 proc fgWriteText(env: ref Env; args: seq[Value]): Value {.nimini.} =
   if args.len >= 3:
-    let x = args[0].i
-    let y = args[1].i
+    let x = valueToInt(args[0])
+    let y = valueToInt(args[1])
     let text = args[2].s
     gFgLayer.buffer.writeText(x, y, text, gTextStyle)
   return valNil()
 
 proc bgFillRect(env: ref Env; args: seq[Value]): Value {.nimini.} =
   if args.len >= 5:
-    let x = args[0].i
-    let y = args[1].i
-    let w = args[2].i
-    let h = args[3].i
+    let x = valueToInt(args[0])
+    let y = valueToInt(args[1])
+    let w = valueToInt(args[2])
+    let h = valueToInt(args[3])
     let ch = args[4].s
     gBgLayer.buffer.fillRect(x, y, w, h, ch, gTextStyle)
   return valNil()
 
 proc fgFillRect(env: ref Env; args: seq[Value]): Value {.nimini.} =
   if args.len >= 5:
-    let x = args[0].i
-    let y = args[1].i
-    let w = args[2].i
-    let h = args[3].i
+    let x = valueToInt(args[0])
+    let y = valueToInt(args[1])
+    let w = valueToInt(args[2])
+    let h = valueToInt(args[3])
     let ch = args[4].s
     gFgLayer.buffer.fillRect(x, y, w, h, ch, gTextStyle)
   return valNil()
@@ -235,31 +242,22 @@ proc executeCodeBlock(context: NiminiContext, codeBlock: CodeBlock, state: AppSt
     # Add user code
     scriptCode.add(codeBlock.code)
     
-    # Debug: print generated script (uncomment to debug)
-    # echo "=== Generated Script ===\n", scriptCode, "\n=== End Script ===\n"
-    
     let tokens = tokenizeDsl(scriptCode)
     let program = parseDsl(tokens)
     execProgram(program, context.env)
     
     return true
-  except:
-    echo "Error in ", codeBlock.lifecycle, " block: ", getCurrentExceptionMsg()
+  except Exception as e:
+    when not defined(emscripten):
+      echo "Error in ", codeBlock.lifecycle, " block: ", e.msg
+    # In WASM, we can't echo, so we'll just fail silently but return false
+    when defined(emscripten):
+      lastError = "Error in on:" & codeBlock.lifecycle & " - " & e.msg
     return false
 
 # ================================================================
-# DEFAULT STYLES (available to code blocks)
+# DEFAULT STYLES (initialized in initStorieContext)
 # ================================================================
-
-var textStyle = defaultStyle()
-textStyle.fg = cyan()
-textStyle.bold = true
-
-var borderStyle = defaultStyle()
-borderStyle.fg = green()
-
-var infoStyle = defaultStyle()
-infoStyle.fg = yellow()
 
 # ================================================================
 # LIFECYCLE MANAGEMENT
@@ -277,18 +275,46 @@ var storieCtx: StorieContext
 
 proc loadAndParseMarkdown(): seq[CodeBlock] =
   ## Load index.md and parse it for code blocks
-  let mdPath = "index.md"
-  
-  if not fileExists(mdPath):
-    echo "Warning: index.md not found, using default behavior"
-    return @[]
-  
-  try:
-    let content = readFile(mdPath)
-    return parseMarkdown(content)
-  except:
-    echo "Error reading index.md: ", getCurrentExceptionMsg()
-    return @[]
+  when defined(emscripten):
+    # In WASM, embed the markdown at compile time
+    # Use staticRead with the markdown content
+    const mdContent = staticRead("index.md")
+    const mdLines = mdContent.splitLines()
+    const mdLineCount = mdLines.len
+    
+    # Debug: detailed parsing info
+    when defined(emscripten):
+      lastError = "MD:" & $mdContent.len & "ch," & $mdLineCount & "ln"
+      
+    let blocks = parseMarkdown(mdContent)
+    
+    when defined(emscripten):
+      if blocks.len == 0:
+        lastError = lastError & "|0blocks"
+        # Show first few lines of markdown to debug
+        var preview = ""
+        for i in 0 ..< min(3, mdLineCount):
+          if i > 0: preview.add(";")
+          let line = mdLines[i]
+          preview.add(if line.len > 20: line[0..19] else: line)
+        lastError = lastError & "|" & preview
+      else:
+        lastError = "" # Success!
+    return blocks
+  else:
+    # In native builds, read from filesystem
+    let mdPath = "index.md"
+    
+    if not fileExists(mdPath):
+      echo "Warning: index.md not found, using default behavior"
+      return @[]
+    
+    try:
+      let content = readFile(mdPath)
+      return parseMarkdown(content)
+    except:
+      echo "Error reading index.md: ", getCurrentExceptionMsg()
+      return @[]
 
 # ================================================================
 # INITIALIZE CONTEXT AND LAYERS
@@ -298,10 +324,24 @@ proc initStorieContext(state: AppState) =
   ## Initialize the Storie context, parse Markdown, and set up layers
   storieCtx = StorieContext()
   storieCtx.codeBlocks = loadAndParseMarkdown()
+  when defined(emscripten):
+    if storieCtx.codeBlocks.len == 0 and lastError.len == 0:
+      lastError = "No code blocks parsed"
   
   # Create default layers that code blocks can use
   storieCtx.bgLayer = state.addLayer("background", 0)
   storieCtx.fgLayer = state.addLayer("foreground", 10)
+  
+  # Initialize styles
+  var textStyle = defaultStyle()
+  textStyle.fg = cyan()
+  textStyle.bold = true
+
+  var borderStyle = defaultStyle()
+  borderStyle.fg = green()
+
+  var infoStyle = defaultStyle()
+  infoStyle.fg = yellow()
   
   # Set global references for Nimini wrappers
   gBgLayer = storieCtx.bgLayer
@@ -310,14 +350,18 @@ proc initStorieContext(state: AppState) =
   gBorderStyle = borderStyle
   gInfoStyle = infoStyle
   
-  storieCtx.niminiContext = createNiminiContext(state)
+  when not defined(emscripten):
+    echo "Loaded ", storieCtx.codeBlocks.len, " code blocks from index.md"
   
-  echo "Loaded ", storieCtx.codeBlocks.len, " code blocks from index.md"
+  storieCtx.niminiContext = createNiminiContext(state)
   
   # Execute init code blocks
   for codeBlock in storieCtx.codeBlocks:
     if codeBlock.lifecycle == "init":
-      discard executeCodeBlock(storieCtx.niminiContext, codeBlock, state)
+      if not executeCodeBlock(storieCtx.niminiContext, codeBlock, state):
+        when defined(emscripten):
+          if lastError.len == 0:
+            lastError = "init block failed"
 
 # ================================================================
 # CALLBACK IMPLEMENTATIONS
@@ -337,18 +381,87 @@ onUpdate = proc(state: AppState, dt: float) =
 
 onRender = proc(state: AppState) =
   if storieCtx.isNil:
+    when defined(emscripten):
+      lastRenderExecutedCount = 0
+      # Write error directly to currentBuffer so it's visible
+      var errStyle = defaultStyle()
+      errStyle.fg = red()
+      errStyle.bold = true
+      state.currentBuffer.writeText(5, 5, "ERROR: storieCtx is nil!", errStyle)
     # Fallback rendering if no context
-    state.currentBuffer.clear()
     let msg = "No index.md found or parsing failed"
     let x = (state.termWidth - msg.len) div 2
     let y = state.termHeight div 2
-    state.currentBuffer.writeText(x, y, msg, textStyle)
+    var fallbackStyle = defaultStyle()
+    fallbackStyle.fg = cyan()
+    state.currentBuffer.writeText(x, y, msg, fallbackStyle)
+    return
+  
+  # Check if we have any render blocks
+  var hasRenderBlocks = false
+  var renderBlockCount = 0
+  for codeBlock in storieCtx.codeBlocks:
+    if codeBlock.lifecycle == "render":
+      hasRenderBlocks = true
+      renderBlockCount += 1
+  
+  if not hasRenderBlocks:
+    when defined(emscripten):
+      lastRenderExecutedCount = 0
+      if lastError.len == 0:
+        lastError = "No on:render blocks"
+    # Fallback if no render blocks found
+    state.currentBuffer.clear()
+    let msg = "No render blocks found in index.md"
+    let x = (state.termWidth - msg.len) div 2
+    let y = state.termHeight div 2
+    var fallbackInfoStyle = defaultStyle()
+    fallbackInfoStyle.fg = yellow()
+    state.currentBuffer.writeText(x, y, msg, fallbackInfoStyle)
+    
+    # Show what blocks we DO have
+    when defined(emscripten):
+      var debugStyle = defaultStyle()
+      debugStyle.fg = cyan()
+      var debugY = y + 2
+      for codeBlock in storieCtx.codeBlocks:
+        let info = "Found: on:" & codeBlock.lifecycle
+        state.currentBuffer.writeText(x, debugY, info, debugStyle)
+        debugY += 1
     return
   
   # Execute render code blocks
+  var executedCount = 0
   for codeBlock in storieCtx.codeBlocks:
     if codeBlock.lifecycle == "render":
-      discard executeCodeBlock(storieCtx.niminiContext, codeBlock, state)
+      let success = executeCodeBlock(storieCtx.niminiContext, codeBlock, state)
+      if success:
+        executedCount += 1
+  
+  # Debug: Show execution status in WASM
+  # Write to foreground layer so user code renders, then we overlay debug on layers
+  when defined(emscripten):
+    var debugStyle = defaultStyle()
+    debugStyle.fg = green()
+    debugStyle.bold = true
+    storieCtx.fgLayer.buffer.writeText(2, 2, "Blocks: " & $storieCtx.codeBlocks.len & " Render: " & $renderBlockCount & " Exec: " & $executedCount, debugStyle)
+
+    # Publish executedCount to WASM HUD
+    lastRenderExecutedCount = executedCount
+    
+    if executedCount == 0 and renderBlockCount > 0:
+      var errorStyle = defaultStyle()
+      errorStyle.fg = red()
+      errorStyle.bold = true
+      storieCtx.fgLayer.buffer.writeText(2, 3, "Render execution FAILED!", errorStyle)
+      # Also show last error if available
+      if lastError.len > 0:
+        storieCtx.fgLayer.buffer.writeText(2, 4, "Error: " & lastError, errorStyle)
+    
+    # Also show frame count to verify rendering is happening
+    var fpsStyle = defaultStyle()
+    fpsStyle.fg = yellow()
+    storieCtx.fgLayer.buffer.writeText(2, 0, "Frame: " & $state.frameCount, fpsStyle)
 
 onInput = proc(state: AppState, event: InputEvent): bool =
   if storieCtx.isNil:
