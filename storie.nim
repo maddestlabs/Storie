@@ -926,7 +926,7 @@ when not defined(emscripten):
   
   # Include user-specified file or default to index.nim at compile time
   # To run a specific file, use: ./compile.sh <filename>
-  # Or compile with: nim c -d:userFile="filename" backstorie.nim
+  # Or compile with: nim c -d:userFile="filename" storie.nim
   const userFile {.strdefine.} = "index"
   
   # Macro to dynamically include file based on compile-time string
@@ -1224,26 +1224,26 @@ when defined(emscripten):
     discard userInput(globalState, event)
 
 proc showHelp() =
-  echo "backstorie v" & version
+  echo "storie v" & version
   echo "Terminal engine with sophisticated input parsing"
   echo ""
   echo "Usage: Use the run.sh script (recommended)"
   echo "       ./run.sh [OPTIONS] [FILE]"
   echo ""
   echo "Or compile directly:"
-  echo "       nim c -r backstorie.nim [OPTIONS]"
+  echo "       nim c -r storie.nim [OPTIONS]"
   echo ""
   echo "Options:"
   echo "  -h, --help            Show this help message"
   echo "  -v, --version         Show version information"
   echo "  --fps <num>          Set target FPS (default 60; Windows non-WT default 30)"
-  echo "                       Can also use BACKSTORIE_TARGET_FPS env var"
+  echo "                       Can also use STORIE_TARGET_FPS env var"
   echo ""
   echo "Examples:"
   echo "  ./run.sh example_boxes              # Run example_boxes.nim"
   echo "  ./run.sh                            # Run default index.nim"
   echo ""
-  echo "Note: To specify a file at compile time, add it to the include list in backstorie.nim"
+  echo "Note: To specify a file at compile time, add it to the include list in storie.nim"
 
 proc main() =
   var p = initOptParser()
@@ -1257,7 +1257,7 @@ proc main() =
         showHelp()
         quit(0)
       of "version", "v":
-        echo "backstorie version " & version
+        echo "storie version " & version
         quit(0)
       else:
         echo "Unknown option: " & key
@@ -1265,7 +1265,7 @@ proc main() =
         quit(1)
     of cmdArgument:
       echo "Unexpected argument: " & key
-      echo "Note: To run a custom file, use: nim c -r -d:userFile=<file> backstorie.nim"
+      echo "Note: To run a custom file, use: nim c -r -d:userFile=<file> storie.nim"
       quit(1)
     else: discard
     # Handle long option with value (e.g., --fps 30 or --fps=30)
@@ -1296,7 +1296,7 @@ proc main() =
       # If not Windows Terminal (WT_SESSION absent), lower default FPS for performance
       if getEnv("WT_SESSION").len == 0:
         state.targetFps = 30.0
-    let fpsEnv = getEnv("BACKSTORIE_TARGET_FPS")
+    let fpsEnv = getEnv("STORIE_TARGET_FPS")
     if fpsEnv.len > 0:
       try:
         let envFps = parseFloat(fpsEnv)

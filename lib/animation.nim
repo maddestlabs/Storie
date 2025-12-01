@@ -1,7 +1,7 @@
 ## Animation Helpers Module
 ## Reusable animation utilities
 
-import ../backstorie
+import ../storie
 import math
 
 # ================================================================

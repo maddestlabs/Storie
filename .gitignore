@@ -3,12 +3,12 @@ nimcache/
 nimcache_wasm/
 *.exe
 *.out
-backstorie
+storie
 
 # WASM build artifacts (keep only source files in web/)
-web/backstorie.wasm
-web/backstorie.wasm.js
-web/backstorie.wasm.wasm
+web/storie.wasm
+web/storie.wasm.js
+web/storie.wasm.wasm
 
 # Emscripten SDK (local installation)
 emsdk/

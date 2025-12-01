@@ -71,7 +71,7 @@ type
     env: ref Env
 
 # ================================================================
-# NIMINI WRAPPERS - Bridge backstorie functions to Nimini
+# NIMINI WRAPPERS - Bridge storie functions to Nimini
 # ================================================================
 
 # Global references to layers (set in initStorieContext)

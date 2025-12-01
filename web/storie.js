@@ -1,7 +1,7 @@
-// Backstorie JavaScript Interface
+// Storie JavaScript Interface
 // Handles terminal rendering, input, and WASM module integration
 
-class BackstorieTerminal {
+class StorieTerminal {
     constructor(canvasElement) {
         this.canvas = canvasElement;
         this.ctx = canvasElement.getContext('2d', { alpha: false });
@@ -134,7 +134,7 @@ class BackstorieTerminal {
         
         let keyCode = 0;
         
-        // Map special keys to Backstorie key codes
+        // Map special keys to Storie key codes
         switch(e.key) {
             case 'Escape': keyCode = 27; break;
             case 'Backspace': keyCode = 127; break;
@@ -331,9 +331,9 @@ class BackstorieTerminal {
 // Global terminal instance
 let terminal = null;
 
-async function initBackstorie() {
+async function initStorie() {
     try {
-        console.log('Initializing Backstorie...');
+        console.log('Initializing Storie...');
         
         // Wait for fonts to load
         if (document.fonts && document.fonts.ready) {
@@ -341,7 +341,7 @@ async function initBackstorie() {
         }
         
         const canvas = document.getElementById('terminal');
-        terminal = new BackstorieTerminal(canvas);
+        terminal = new StorieTerminal(canvas);
         
         console.log('Terminal created:', terminal.cols, 'x', terminal.rows);
         
@@ -364,7 +364,7 @@ async function initBackstorie() {
         console.log('Starting animation loop...');
         terminal.startAnimationLoop();
     } catch (error) {
-        console.error('Failed to initialize Backstorie:', error);
+        console.error('Failed to initialize Storie:', error);
         document.getElementById('container').innerHTML = 
             `<div class="error">
                 <h2>Initialization Error</h2>
@@ -375,5 +375,5 @@ async function initBackstorie() {
 
 // Export for use in HTML
 if (typeof window !== 'undefined') {
-    window.initBackstorie = initBackstorie;
+    window.initStorie = initStorie;
 }

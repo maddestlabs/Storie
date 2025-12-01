@@ -1,12 +1,12 @@
 #!/bin/bash
-# Backstorie WASM compiler script
+# Storie WASM compiler script
 
 VERSION="0.1.0"
 
 show_help() {
     cat << EOF
-backstorie WASM compiler v$VERSION
-Compile Backstorie for web deployment
+storie WASM compiler v$VERSION
+Compile Storie for web deployment
 
 Usage: ./build-web.sh [OPTIONS] [FILE]
 
@@ -58,7 +58,7 @@ while [[ $# -gt 0 ]]; do
             exit 0
             ;;
         -v|--version)
-            echo "backstorie WASM compiler version $VERSION"
+            echo "storie WASM compiler version $VERSION"
             exit 0
             ;;
         -r|--release)
@@ -135,7 +135,7 @@ fi
 # Create output directory if it doesn't exist
 mkdir -p "$OUTPUT_DIR"
 
-echo "Compiling Backstorie to WASM with ${FILE_BASE}.nim..."
+echo "Compiling Storie to WASM with ${FILE_BASE}.nim..."
 echo "Output directory: $OUTPUT_DIR"
 echo ""
 
@@ -155,8 +155,8 @@ NIM_OPTS="c
   --exceptions:goto
   $RELEASE_MODE
   --nimcache:nimcache_wasm
-  -o:$OUTPUT_DIR/backstorie.wasm.js
-  backstorie.nim"
+  -o:$OUTPUT_DIR/storie.wasm.js
+  storie.nim"
 
 # Emscripten flags
 export EMCC_CFLAGS="-s ALLOW_MEMORY_GROWTH=1 \
@@ -184,15 +184,15 @@ echo ""
 echo "✓ Compilation successful!"
 echo ""
 echo "Output files:"
-echo "  - $OUTPUT_DIR/backstorie.wasm.js"
-echo "  - $OUTPUT_DIR/backstorie.wasm"
+echo "  - $OUTPUT_DIR/storie.wasm.js"
+echo "  - $OUTPUT_DIR/storie.wasm"
 echo ""
 
 # Copy supporting files from web/ template if they exist and output is different
 if [ "$OUTPUT_DIR" != "web" ]; then
-    if [ -f "web/backstorie.js" ]; then
-        cp web/backstorie.js "$OUTPUT_DIR/backstorie.js"
-        echo "  - $OUTPUT_DIR/backstorie.js (copied from web/)"
+    if [ -f "web/storie.js" ]; then
+        cp web/storie.js "$OUTPUT_DIR/storie.js"
+        echo "  - $OUTPUT_DIR/storie.js (copied from web/)"
     fi
     if [ -f "web/index.html" ]; then
         cp web/index.html "$OUTPUT_DIR/index.html"
@@ -204,7 +204,7 @@ if [ "$OUTPUT_DIR" != "web" ]; then
         echo "  - $OUTPUT_DIR/index.md (runtime content)"
     fi
 else
-    echo "  - $OUTPUT_DIR/backstorie.js (JavaScript interface)"
+    echo "  - $OUTPUT_DIR/storie.js (JavaScript interface)"
     echo "  - $OUTPUT_DIR/index.html (HTML template)"
     # Copy index.md if it exists (needed at runtime)
     if [ -f "index.md" ]; then
@@ -214,10 +214,10 @@ else
 fi
 
 # Check for required supporting files
-if [ ! -f "$OUTPUT_DIR/backstorie.js" ]; then
+if [ ! -f "$OUTPUT_DIR/storie.js" ]; then
     echo ""
-    echo "Warning: $OUTPUT_DIR/backstorie.js not found."
-    echo "         Copy web/backstorie.js to $OUTPUT_DIR/ or create the JavaScript interface."
+    echo "Warning: $OUTPUT_DIR/storie.js not found."
+    echo "         Copy web/storie.js to $OUTPUT_DIR/ or create the JavaScript interface."
 fi
 
 if [ ! -f "$OUTPUT_DIR/index.html" ]; then

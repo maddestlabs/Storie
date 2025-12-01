@@ -1,4 +1,4 @@
-## Event Handler example for Backstorie
+## Event Handler example for Storie
 
 import std/strformat
 
@@ -23,7 +23,7 @@ proc renderScreen(state: AppState) =
   var y = 0
   
   # Title
-  state.currentBuffer.writeText(0, y, "=== Backstorie Event Handler Demo ===", style)
+  state.currentBuffer.writeText(0, y, "=== Storie Event Handler Demo ===", style)
   y += 2
   
   # Instructions
@@ -94,7 +94,7 @@ proc handleEvent(event: InputEvent) =
     eventLog.delete(0)
 
 # ================================================================
-# ASSIGN THE BACKSTORIE CALLBACKS
+# ASSIGN THE STORIE CALLBACKS
 # ================================================================
 
 onInit = proc(state: AppState) =

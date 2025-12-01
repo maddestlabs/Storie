@@ -1,8 +1,8 @@
 ## UI Components Module
 ## Example of how to create reusable modules with the simplified architecture
-## Import backstorie directly and work with AppState
+## Import storie directly and work with AppState
 
-import ../backstorie
+import ../storie
 
 # ================================================================
 # BOX DRAWING

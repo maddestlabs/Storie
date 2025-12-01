@@ -2,13 +2,13 @@
 
 Terminal engine in [Nim](https://nim-lang.org/). Build stuff using Markdown with executable Nim code blocks. Fast prototyping that exports to Nim for native compilation across platforms.
 
-Check out live: [Demo](https://maddestlabs.github.io/Storie/)
+Check it out live: [Demo](https://maddestlabs.github.io/Storie/)
 
 The engine is built around GitHub features. No need to actually install Nim, or anything for that matter. Just create a new repo from the Storie template, update index.md with your own content and it'll auto-compile for the web. Enable GitHub Pages and you'll see that content served live within moments. GitHub Actions take care of the full compilation process.
 
 ## Features
 
-Features carried over from Backstorie:
+Core engine features:
 - **Cross-Platform** - Runs natively in terminals and in web browsers via WebAssembly
 - **Minimal Filesize** - Compiled games/apps average from maybe 400KB to 2MB.
 - **Reusable Libraries** - Helper modules for events, animations, and UI components

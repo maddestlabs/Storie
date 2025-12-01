@@ -47,7 +47,7 @@ onRender = proc(state: AppState) =
     state.currentBuffer.write(w - 1, y, "|", borderStyle)
   
   # Title
-  let title = "WINDOWS TEST - Backstorie Engine"
+  let title = "WINDOWS TEST - Storie Engine"
   let titleX = (w - title.len) div 2
   state.currentBuffer.writeText(titleX, 2, title, titleStyle)
   

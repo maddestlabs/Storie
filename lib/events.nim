@@ -1,10 +1,10 @@
 ## Terminal Event Handler - Direct API Version
-## Robust event handling for backstorie terminal engine
+## Robust event handling for storie terminal engine
 ## No plugin boilerplate - just import and use!
 
 import std/[tables, sets, hashes, times]
 
-# Note: InputEvent types are already available from backstorie.nim
+# Note: InputEvent types are already available from storie.nim
 
 # ================================================================
 # EVENT HANDLER CONFIGURATION AND STATE

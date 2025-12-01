@@ -1,11 +1,11 @@
 #!/bin/bash
-# Backstorie compiler script - compile and run with custom file support
+# Storie compiler script - compile and run with custom file support
 
 VERSION="0.1.0"
 
 show_help() {
     cat << EOF
-backstorie v$VERSION
+storie v$VERSION
 Terminal engine with sophisticated input parsing
 
 Usage: ./build.sh [OPTIONS] [FILE]
@@ -42,7 +42,7 @@ while [[ $# -gt 0 ]]; do
             exit 0
             ;;
         -v|--version)
-            echo "backstorie version $VERSION"
+            echo "storie version $VERSION"
             exit 0
             ;;
         -r|--release)
@@ -95,9 +95,9 @@ if [ ! -f "${FILE_BASE}.nim" ]; then
 fi
 
 # Compile with userFile define
-echo "Compiling backstorie with ${FILE_BASE}.nim..."
-nim c $RELEASE_MODE -d:userFile="$FILE_BASE" backstorie.nim || \
-  (echo "Compilation failed. Make sure ${FILE_BASE}.nim is added to the include list in backstorie.nim" && exit 1)
+echo "Compiling storie with ${FILE_BASE}.nim..."
+nim c $RELEASE_MODE -d:userFile="$FILE_BASE" storie.nim || \
+  (echo "Compilation failed. Make sure ${FILE_BASE}.nim is added to the include list in storie.nim" && exit 1)
 
 if [ $? -ne 0 ]; then
     echo "Compilation failed!"
@@ -106,10 +106,10 @@ fi
 
 # Run if not compile-only
 if [ "$COMPILE_ONLY" = false ]; then
-    echo "Running backstorie..."
+    echo "Running storie..."
     echo ""
-    ./backstorie "$@"
+    ./storie "$@"
 else
     echo "Compilation successful!"
-    echo "Run with: ./backstorie"
+    echo "Run with: ./storie"
 fi

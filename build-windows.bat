@@ -1,10 +1,10 @@
 @echo off
-REM Windows build script for Backstorie
+REM Windows build script for Storie
 REM Usage: build-windows.bat [filename]
 REM Example: build-windows.bat examples\boxes.nim
 
 echo ========================================
-echo Backstorie Windows Build
+echo Storie Windows Build
 echo ========================================
 echo.
 
@@ -27,7 +27,7 @@ echo Target: Windows Console
 echo.
 
 REM Compile for Windows
-nim c -d:release -d:userFile=%USERFILE% --out:backstorie.exe backstorie.nim
+nim c -d:release -d:userFile=%USERFILE% --out:storie.exe storie.nim
 
 if %ERRORLEVEL% EQU 0 (
     echo.
@@ -35,7 +35,7 @@ if %ERRORLEVEL% EQU 0 (
     echo Build successful!
     echo ========================================
     echo.
-    echo Run with: backstorie.exe
+    echo Run with: storie.exe
     echo.
     echo NOTE: For best results, use Windows Terminal
     echo       Legacy CMD may have limited support

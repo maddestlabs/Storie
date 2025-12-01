@@ -1,8 +1,8 @@
-name: Sync from Backstorie Template
+name: Sync from Storie Template
 
-# This workflow syncs updates from the Backstorie template repository.
-# - In the Backstorie repo itself: Does nothing (or can sync from your upstream if you fork it)
-# - In repos created from template: Available to manually pull updates from maddestlabs/backstorie
+# This workflow syncs updates from the Storie template repository.
+# - In the Storie repo itself: Does nothing (or can sync from your upstream if you fork it)
+# - In repos created from template: Available to manually pull updates from maddestlabs/storie
 
 on:
   workflow_dispatch:      # Manual triggering only
@@ -24,10 +24,10 @@ jobs:
         run: |
           REPO_NAME="${{ github.repository }}"
           
-          # Check if this is the original Backstorie repo
-          if [ "$REPO_NAME" = "maddestlabs/backstorie" ]; then
+          # Check if this is the original Storie repo
+          if [ "$REPO_NAME" = "maddestlabs/storie" ]; then
             echo "is_template_origin=true" >> $GITHUB_OUTPUT
-            echo "This is the original Backstorie repository. Skipping sync."
+            echo "This is the original Storie repository. Skipping sync."
           else
             echo "is_template_origin=false" >> $GITHUB_OUTPUT
             echo "This is a template-derived repository. Will sync from upstream."
@@ -42,14 +42,14 @@ jobs:
       - name: Add upstream remote
         if: steps.detect.outputs.is_template_origin == 'false'
         run: |
-          git remote add upstream https://github.com/maddestlabs/backstorie.git || true
+          git remote add upstream https://github.com/maddestlabs/storie.git || true
           git fetch upstream
 
       - name: Create sync branch
         if: steps.detect.outputs.is_template_origin == 'false'
         id: create_branch
         run: |
-          BRANCH_NAME="sync-backstorie-$(date +%Y%m%d-%H%M%S)"
+          BRANCH_NAME="sync-storie-$(date +%Y%m%d-%H%M%S)"
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
           git checkout -b "$BRANCH_NAME"
 
@@ -67,7 +67,7 @@ jobs:
             echo "Merge has conflicts - will create PR for manual resolution"
             # Stage all changes (including conflicts)
             git add -A
-            git commit -m "chore: sync from backstorie template (has conflicts)" || true
+            git commit -m "chore: sync from storie template (has conflicts)" || true
           fi
           
           # Restore index.nim from HEAD to exclude it from sync
@@ -87,11 +87,11 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ steps.create_branch.outputs.branch_name }}
-          title: '🔄 Sync from Backstorie template'
+          title: '🔄 Sync from Storie template'
           body: |
             ## Automated Template Sync
             
-            This PR syncs updates from the [Backstorie template repository](https://github.com/maddestlabs/backstorie).
+            This PR syncs updates from the [Storie template repository](https://github.com/maddestlabs/storie).
             
             ### What to do:
             
@@ -106,7 +106,7 @@ jobs:
             
             ### Tips for Conflict Resolution
             
-            - Core engine files (`backstorie.nim`, `lib/*`) should generally accept upstream changes
+            - Core engine files (`storie.nim`, `lib/*`) should generally accept upstream changes
             - Your custom files should keep your changes
             - Configuration files may need manual merging
             
@@ -125,7 +125,7 @@ jobs:
         if: always()
         run: |
           if [ "${{ steps.detect.outputs.is_template_origin }}" = "true" ]; then
-            echo "✅ Running in original Backstorie repo - no sync needed"
+            echo "✅ Running in original Storie repo - no sync needed"
           elif [ "${{ steps.detect.outputs.is_template_origin }}" = "false" ]; then
             echo "✅ Sync PR created for template-derived repository"
           fi

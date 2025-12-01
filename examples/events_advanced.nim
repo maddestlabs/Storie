@@ -481,7 +481,7 @@ proc renderGameUI(state: AppState, handler: TerminalEventHandler) =
     eventLog.delete(0)
 
 # ================================================================
-# BACKSTORIE CALLBACKS
+# STORIE CALLBACKS
 # ================================================================
 
 var advancedHandler: TerminalEventHandler
