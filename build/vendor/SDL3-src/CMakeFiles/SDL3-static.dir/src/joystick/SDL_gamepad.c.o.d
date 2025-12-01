@@ -1,0 +1,34 @@
+vendor/SDL3-src/CMakeFiles/SDL3-static.dir/src/joystick/SDL_gamepad.c.o: \
+ /workspaces/Storie/vendor/SDL3-src/src/joystick/SDL_gamepad.c \
+ /usr/include/stdc-predef.h \
+ /workspaces/Storie/vendor/SDL3-src/src/SDL_internal.h \
+ /workspaces/Storie/vendor/SDL3-src/src/joystick/SDL_sysjoystick.h \
+ /workspaces/Storie/vendor/SDL3-src/src/joystick/SDL_joystick_c.h \
+ /workspaces/Storie/vendor/SDL3-src/src/joystick/SDL_steam_virtual_gamepad.h \
+ /workspaces/Storie/vendor/SDL3-src/src/joystick/SDL_gamepad_c.h \
+ /workspaces/Storie/vendor/SDL3-src/src/joystick/SDL_gamepad_db.h \
+ /workspaces/Storie/vendor/SDL3-src/src/joystick/controller_type.h \
+ /workspaces/Storie/vendor/SDL3-src/src/joystick/usb_ids.h \
+ /workspaces/Storie/vendor/SDL3-src/src/joystick/hidapi/SDL_hidapi_flydigi.h \
+ /workspaces/Storie/vendor/SDL3-src/src/joystick/hidapi/SDL_hidapi_nintendo.h \
+ /workspaces/Storie/vendor/SDL3-src/src/joystick/hidapi/SDL_hidapi_sinput.h \
+ /workspaces/Storie/vendor/SDL3-src/src/joystick/../events/SDL_events_c.h \
+ /workspaces/Storie/vendor/SDL3-src/src/joystick/../events/../video/SDL_sysvideo.h \
+ /workspaces/Storie/vendor/SDL3-src/include/SDL3/SDL_vulkan.h \
+ /workspaces/Storie/vendor/SDL3-src/include/SDL3/SDL_stdinc.h \
+ /workspaces/Storie/vendor/SDL3-src/include/SDL3/SDL_error.h \
+ /workspaces/Storie/vendor/SDL3-src/include/SDL3/SDL_video.h \
+ /workspaces/Storie/vendor/SDL3-src/include/SDL3/SDL_begin_code.h \
+ /workspaces/Storie/vendor/SDL3-src/include/SDL3/SDL_close_code.h \
+ /workspaces/Storie/vendor/SDL3-src/src/joystick/../events/../video/SDL_surface_c.h \
+ /workspaces/Storie/vendor/SDL3-src/src/joystick/../events/../video/SDL_blit.h \
+ /workspaces/Storie/vendor/SDL3-src/src/joystick/../events/SDL_clipboardevents_c.h \
+ /workspaces/Storie/vendor/SDL3-src/src/joystick/../events/SDL_displayevents_c.h \
+ /workspaces/Storie/vendor/SDL3-src/src/joystick/../events/SDL_dropevents_c.h \
+ /workspaces/Storie/vendor/SDL3-src/src/joystick/../events/SDL_keyboard_c.h \
+ /workspaces/Storie/vendor/SDL3-src/src/joystick/../events/SDL_keymap_c.h \
+ /workspaces/Storie/vendor/SDL3-src/src/joystick/../events/SDL_mouse_c.h \
+ /workspaces/Storie/vendor/SDL3-src/src/joystick/../events/SDL_touch_c.h \
+ /workspaces/Storie/vendor/SDL3-src/src/joystick/../events/SDL_pen_c.h \
+ /workspaces/Storie/vendor/SDL3-src/src/joystick/../events/../SDL_internal.h \
+ /workspaces/Storie/vendor/SDL3-src/src/joystick/../events/SDL_windowevents_c.h

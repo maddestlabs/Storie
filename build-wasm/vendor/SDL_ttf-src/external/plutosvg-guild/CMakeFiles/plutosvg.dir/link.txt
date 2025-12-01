@@ -1,0 +1,2 @@
+/workspaces/Storie/emsdk/upstream/emscripten/emar qc libplutosvg.a CMakeFiles/plutosvg.dir/source/plutosvg.c.o
+/workspaces/Storie/emsdk/upstream/emscripten/emranlib libplutosvg.a

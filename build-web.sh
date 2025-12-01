@@ -1,42 +1,40 @@
 #!/bin/bash
 # Storie WASM compiler script
+# Compiles storie.nim to WebAssembly using Emscripten's SDL3
+
+set -e
 
 VERSION="0.1.0"
+OUTPUT_DIR="docs"
+FILE_BASE="storie"
 
 show_help() {
     cat << EOF
-storie WASM compiler v$VERSION
+Storie WASM compiler v$VERSION
 Compile Storie for web deployment
 
-Usage: ./build-web.sh [OPTIONS] [FILE]
-
-Arguments:
-  FILE                   Nim file to compile (default: index.nim)
-                        Can be specified with or without .nim extension
+Usage: ./build-web.sh [OPTIONS]
 
 Options:
   -h, --help            Show this help message
   -v, --version         Show version information
   -r, --release         Compile in release mode (optimized)
   -s, --serve           Start a local web server after compilation
-  -o, --output DIR      Output directory (default: web)
+  -o, --output DIR      Output directory (default: docs)
 
 Examples:
-  ./build-web.sh                          # Compile index.nim to WASM
-  ./build-web.sh example_boxes            # Compile example_boxes.nim to WASM
-  ./build-web.sh -r example_boxes         # Compile optimized
-  ./build-web.sh -s                       # Compile and serve
-  ./build-web.sh -o docs                  # Output to docs/ (for GitHub Pages)
-  ./build-web.sh -o .                     # Output to root directory
+  ./build-web.sh                # Compile to docs/
+  ./build-web.sh -r             # Compile optimized
+  ./build-web.sh -s             # Compile and serve
+  ./build-web.sh -o web         # Output to web/ directory
 
 The compiled files will be placed in the specified output directory.
 
 Requirements:
   - Nim compiler with Emscripten support
-  - Emscripten SDK (emcc)
+  - Emscripten SDK (emcc) - SDL3 built-in support
 
 Setup Emscripten:
-  git clone https://github.com/emscripten-core/emsdk.git
   cd emsdk
   ./emsdk install latest
   ./emsdk activate latest
@@ -47,8 +45,6 @@ EOF
 
 RELEASE_MODE=""
 SERVE=false
-USER_FILE=""
-OUTPUT_DIR="docs"
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -58,7 +54,7 @@ while [[ $# -gt 0 ]]; do
             exit 0
             ;;
         -v|--version)
-            echo "storie WASM compiler version $VERSION"
+            echo "Storie WASM compiler version $VERSION"
             exit 0
             ;;
         -r|--release)
@@ -84,13 +80,9 @@ while [[ $# -gt 0 ]]; do
             exit 1
             ;;
         *)
-            if [ -z "$USER_FILE" ]; then
-                USER_FILE="$1"
-            else
-                echo "Error: Multiple files specified. Only one file can be compiled at a time."
-                exit 1
-            fi
-            shift
+            echo "Error: Unexpected argument: $1"
+            echo "Use --help for usage information"
+            exit 1
             ;;
     esac
 done
@@ -99,43 +91,16 @@ done
 if ! command -v emcc &> /dev/null; then
     echo "Error: Emscripten (emcc) not found!"
     echo ""
-    echo "Please install and activate Emscripten:"
-    echo "  git clone https://github.com/emscripten-core/emsdk.git"
+    echo "Please activate Emscripten:"
     echo "  cd emsdk"
-    echo "  ./emsdk install latest"
-    echo "  ./emsdk activate latest"
     echo "  source ./emsdk_env.sh"
     exit 1
-fi
-
-# Determine file to use
-if [ -z "$USER_FILE" ]; then
-    FILE_BASE="index"
-else
-    # Remove .nim extension if provided
-    FILE_BASE="${USER_FILE%.nim}"
-fi
-
-# Check if file exists, try examples/ directory if not found in current location
-if [ ! -f "${FILE_BASE}.nim" ]; then
-    if [ ! -z "$USER_FILE" ] && [ -f "examples/${FILE_BASE}.nim" ]; then
-        FILE_BASE="examples/${FILE_BASE}"
-        echo "Found file in examples directory: ${FILE_BASE}.nim"
-    else
-        echo "Error: File not found: ${FILE_BASE}.nim"
-        if [ -z "$USER_FILE" ]; then
-            echo "Hint: Create an index.nim file or specify a different file to compile"
-        else
-            echo "Hint: File not found in current directory or examples/ directory"
-        fi
-        exit 1
-    fi
 fi
 
 # Create output directory if it doesn't exist
 mkdir -p "$OUTPUT_DIR"
 
-echo "Compiling Storie to WASM with ${FILE_BASE}.nim..."
+echo "Compiling Storie to WASM..."
 echo "Output directory: $OUTPUT_DIR"
 echo ""
 
@@ -149,34 +114,43 @@ NIM_OPTS="c
   --clang.cpp.exe:emcc
   --clang.cpp.linkerexe:emcc
   -d:emscripten
-  -d:userFile=$FILE_BASE
   -d:noSignalHandler
   --threads:off
   --exceptions:goto
   $RELEASE_MODE
   --nimcache:nimcache_wasm
-  -o:$OUTPUT_DIR/storie.wasm.js
-  storie.nim"
+  -o:$OUTPUT_DIR/storie.js
+  ${FILE_BASE}.nim"
 
-# Emscripten flags
+# Emscripten flags - Link against SDL3 and SDL3_ttf built with CMake
+# Optional: Preload font assets for TTF rendering (comment out to load fonts at runtime via fetch)
+# Note: Runtime loading requires setting up FS and fetching fonts via JavaScript
 export EMCC_CFLAGS="-s ALLOW_MEMORY_GROWTH=1 \
-  -s EXPORTED_FUNCTIONS=['_malloc','_free','_emInit','_emUpdate','_emResize','_emGetCell','_emGetCellFgR','_emGetCellFgG','_emGetCellFgB','_emGetCellBgR','_emGetCellBgG','_emGetCellBgB','_emGetCellBold','_emGetCellItalic','_emGetCellUnderline','_emHandleKeyPress','_emHandleTextInput','_emHandleMouseClick','_emHandleMouseMove'] \
-  -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap','allocateUTF8','UTF8ToString'] \
+  -s INITIAL_MEMORY=67108864 \
+  -s STACK_SIZE=8388608 \
+  -s ENVIRONMENT=web \
   -s MODULARIZE=0 \
   -s EXPORT_NAME='Module' \
-  -s ENVIRONMENT=web \
-  -s INITIAL_MEMORY=33554432 \
-  -s STACK_SIZE=5242880 \
-  -s ASSERTIONS=0 \
-  -s STACK_OVERFLOW_CHECK=0"
+  -s ASSERTIONS=1 \
+  --preload-file docs/assets@/assets \
+  -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap','UTF8ToString','FS']"
+
+# Additional optimization flags for release mode
+if [ ! -z "$RELEASE_MODE" ]; then
+    export EMCC_CFLAGS="$EMCC_CFLAGS -O3 -s ASSERTIONS=0"
+fi
 
 # Compile
-echo "Running Nim compiler..."
+echo "Running Nim compiler with Emscripten..."
+echo "  Input: ${FILE_BASE}.nim"
+echo "  Output: $OUTPUT_DIR/storie.js"
+echo ""
+
 nim $NIM_OPTS
 
 if [ $? -ne 0 ]; then
     echo ""
-    echo "Compilation failed!"
+    echo "✗ Compilation failed!"
     exit 1
 fi
 
@@ -184,47 +158,85 @@ echo ""
 echo "✓ Compilation successful!"
 echo ""
 echo "Output files:"
-echo "  - $OUTPUT_DIR/storie.wasm.js"
+echo "  - $OUTPUT_DIR/storie.js"
 echo "  - $OUTPUT_DIR/storie.wasm"
 echo ""
 
-# Copy supporting files from web/ template if they exist and output is different
-if [ "$OUTPUT_DIR" != "web" ]; then
-    if [ -f "web/storie.js" ]; then
-        cp web/storie.js "$OUTPUT_DIR/storie.js"
-        echo "  - $OUTPUT_DIR/storie.js (copied from web/)"
-    fi
-    if [ -f "web/index.html" ]; then
-        cp web/index.html "$OUTPUT_DIR/index.html"
-        echo "  - $OUTPUT_DIR/index.html (copied from web/)"
-    fi
-    # Copy index.md if it exists (needed at runtime)
-    if [ -f "index.md" ]; then
-        cp index.md "$OUTPUT_DIR/index.md"
-        echo "  - $OUTPUT_DIR/index.md (runtime content)"
-    fi
-else
-    echo "  - $OUTPUT_DIR/storie.js (JavaScript interface)"
-    echo "  - $OUTPUT_DIR/index.html (HTML template)"
-    # Copy index.md if it exists (needed at runtime)
-    if [ -f "index.md" ]; then
-        cp index.md "$OUTPUT_DIR/index.md"
-        echo "  - $OUTPUT_DIR/index.md (runtime content)"
-    fi
-fi
-
-# Check for required supporting files
-if [ ! -f "$OUTPUT_DIR/storie.js" ]; then
-    echo ""
-    echo "Warning: $OUTPUT_DIR/storie.js not found."
-    echo "         Copy web/storie.js to $OUTPUT_DIR/ or create the JavaScript interface."
-fi
-
+# Create a minimal HTML file if it doesn't exist
 if [ ! -f "$OUTPUT_DIR/index.html" ]; then
-    echo ""
-    echo "Warning: $OUTPUT_DIR/index.html not found."
-    echo "         Copy web/index.html to $OUTPUT_DIR/ or create the HTML template."
+    cat > "$OUTPUT_DIR/index.html" << 'HTMLEOF'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Storie</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: monospace;
+            color: #fff;
+        }
+        #container {
+            text-align: center;
+        }
+        #canvas {
+            border: 1px solid #333;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        #status {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #888;
+        }
+        .error {
+            color: #f44;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <canvas id="canvas" width="800" height="600"></canvas>
+        <div id="status">Loading...</div>
+    </div>
+    
+    <script>
+        var Module = {
+            canvas: document.getElementById('canvas'),
+            printErr: function(text) {
+                console.error(text);
+                document.getElementById('status').innerHTML = '<span class="error">' + text + '</span>';
+            },
+            print: function(text) {
+                console.log(text);
+            },
+            onRuntimeInitialized: function() {
+                document.getElementById('status').textContent = 'Running - Press ESC to quit';
+            }
+        };
+    </script>
+    <script src="storie.js"></script>
+</body>
+</html>
+HTMLEOF
+    echo "  - $OUTPUT_DIR/index.html (created)"
 fi
+
+# Copy index.md if it exists (needed at runtime for WASM)
+if [ -f "index.md" ]; then
+    cp index.md "$OUTPUT_DIR/index.md"
+    echo "  - $OUTPUT_DIR/index.md (markdown content)"
+fi
+
+echo ""
+echo "Build complete!"
 
 # Start web server if requested
 if [ "$SERVE" = true ]; then
@@ -243,7 +255,7 @@ if [ "$SERVE" = true ]; then
         cd "$OUTPUT_DIR" && php -S localhost:8000
     else
         echo "Error: No web server available (tried python3, python, php)"
-        echo "Please install Python or PHP, or serve the $OUTPUT_DIR/ directory manually."
+        echo "Please serve the $OUTPUT_DIR/ directory manually."
         exit 1
     fi
 else

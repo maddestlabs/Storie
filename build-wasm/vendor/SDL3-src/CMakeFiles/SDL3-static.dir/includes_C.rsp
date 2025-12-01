@@ -1,0 +1,1 @@
+-I"/workspaces/Storie/build-wasm/vendor/SDL3-src/include-config-release/build_config" -I"/workspaces/Storie/build-wasm/vendor/SDL3-src/include-revision" -I"/workspaces/Storie/vendor/SDL3-src/include" -I"/workspaces/Storie/vendor/SDL3-src/src"

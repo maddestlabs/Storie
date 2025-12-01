@@ -1,0 +1,2 @@
+/workspaces/Storie/emsdk/upstream/emscripten/emar qc libharfbuzz.a CMakeFiles/harfbuzz.dir/src/harfbuzz.cc.o
+/workspaces/Storie/emsdk/upstream/emscripten/emranlib libharfbuzz.a

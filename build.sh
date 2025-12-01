@@ -1,18 +1,14 @@
 #!/bin/bash
-# Storie compiler script - compile and run with custom file support
+# Storie native build script - SDL3 backend
 
 VERSION="0.1.0"
 
 show_help() {
     cat << EOF
 storie v$VERSION
-Terminal engine with sophisticated input parsing
+SDL3-based engine with markdown content (index.md)
 
-Usage: ./build.sh [OPTIONS] [FILE]
-
-Arguments:
-  FILE                   Nim file to run (default: index.nim)
-                        Can be specified with or without .nim extension
+Usage: ./build.sh [OPTIONS]
 
 Options:
   -h, --help            Show this help message
@@ -21,18 +17,17 @@ Options:
   -c, --compile-only    Compile without running
 
 Examples:
-  ./build.sh                           # Run index.nim
-  ./build.sh example_boxes             # Run example_boxes.nim
-  ./build.sh plugins/simple_counter    # Run plugins/simple_counter.nim
-  ./build.sh -r example_boxes          # Compile optimized and run
-  ./build.sh -c example_boxes          # Compile only, don't run
+  ./build.sh                           # Compile and run
+  ./build.sh -r                        # Compile optimized and run
+  ./build.sh -c                        # Compile only, don't run
+
+Note: Content is loaded from index.md at runtime.
 
 EOF
 }
 
 RELEASE_MODE=""
 COMPILE_ONLY=false
-USER_FILE=""
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -59,45 +54,21 @@ while [[ $# -gt 0 ]]; do
             exit 1
             ;;
         *)
-            if [ -z "$USER_FILE" ]; then
-                USER_FILE="$1"
-            else
-                echo "Error: Multiple files specified. Only one file can be run at a time."
-                exit 1
-            fi
-            shift
+            echo "Error: Unexpected argument: $1"
+            echo "Use --help for usage information"
+            exit 1
             ;;
     esac
 done
 
-# Determine file to use
-if [ -z "$USER_FILE" ]; then
-    FILE_BASE="index"
-else
-    # Remove .nim extension if provided
-    FILE_BASE="${USER_FILE%.nim}"
+# Check for index.md
+if [ ! -f "index.md" ]; then
+    echo "Warning: index.md not found. Create it with Nim code blocks."
 fi
 
-# Check if file exists, try examples/ directory if not found in current location
-if [ ! -f "${FILE_BASE}.nim" ]; then
-    if [ ! -z "$USER_FILE" ] && [ -f "examples/${FILE_BASE}.nim" ]; then
-        FILE_BASE="examples/${FILE_BASE}"
-        echo "Found file in examples directory: ${FILE_BASE}.nim"
-    else
-        echo "Error: File not found: ${FILE_BASE}.nim"
-        if [ -z "$USER_FILE" ]; then
-            echo "Hint: Create an index.nim file or specify a different file to run"
-        else
-            echo "Hint: File not found in current directory or examples/ directory"
-        fi
-        exit 1
-    fi
-fi
-
-# Compile with userFile define
-echo "Compiling storie with ${FILE_BASE}.nim..."
-nim c $RELEASE_MODE -d:userFile="$FILE_BASE" storie.nim || \
-  (echo "Compilation failed. Make sure ${FILE_BASE}.nim is added to the include list in storie.nim" && exit 1)
+# Compile
+echo "Compiling Storie (SDL3 native)..."
+nim c $RELEASE_MODE storie.nim
 
 if [ $? -ne 0 ]; then
     echo "Compilation failed!"
