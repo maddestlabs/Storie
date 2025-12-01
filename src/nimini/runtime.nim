@@ -15,7 +15,8 @@ type
     vkBool,
     vkString,
     vkFunction,
-    vkMap
+    vkMap,
+    vkArray
 
   NativeFunc* = proc(env: ref Env; args: seq[Value]): Value
 
@@ -33,6 +34,7 @@ type
     s*: string
     fnVal*: FunctionVal
     map*: Table[string, Value]
+    arr*: seq[Value]
 
   Env* = object
     vars*: Table[string, Value]
@@ -46,6 +48,12 @@ proc `$`*(v: Value): string =
   of vkBool: result = $v.b
   of vkString: result = v.s
   of vkFunction: result = "<function>"
+  of vkArray:
+    result = "["
+    for i, elem in v.arr:
+      if i > 0: result.add(", ")
+      result.add($elem)
+    result.add("]")
   of vkMap:
     result = "{"
     var first = true
@@ -175,6 +183,7 @@ proc toBool(v: Value): bool =
   of vkString: v.s.len > 0
   of vkFunction: true
   of vkMap: v.map.len > 0
+  of vkArray: v.arr.len > 0
 
 proc toFloat(v: Value): float =
   case v.kind
@@ -185,6 +194,8 @@ proc toFloat(v: Value): float =
       parseFloat(v.s)
     except:
       quit "Runtime Error: Cannot convert string '" & v.s & "' to float"
+  of vkArray:
+    quit "Runtime Error: Cannot convert array to float"
   else:
     quit "Runtime Error: Expected numeric value, got " & $v.kind & " (value: " & $v & ")"
 
@@ -197,6 +208,8 @@ proc toInt(v: Value): int =
       parseInt(v.s)
     except:
       quit "Runtime Error: Cannot convert string '" & v.s & "' to int"
+  of vkArray:
+    quit "Runtime Error: Cannot convert array to int"
   else:
     quit "Runtime Error: Expected numeric value, got " & $v.kind & " (value: " & $v & ")"
 
@@ -280,7 +293,6 @@ proc evalExpr(e: Expr; env: ref Env): Value =
     of "not":
       valBool(not toBool(v))
     of "$":
-      # String conversion operator - convert any value to string
       valString($v)
     else:
       quit "Unknown unary op: " & e.unaryOp
@@ -305,48 +317,74 @@ proc evalExpr(e: Expr; env: ref Env): Value =
     let r = evalExpr(e.right, env)
 
     case e.op
-    of "+", "-", "*", "/", "%":
-      # Arithmetic operators - check if both operands are integers
+    of "&":
+      # String concatenation - handle first to avoid converting to float
+      valString($l & $r)
+    of "+", "-", "*", "/", "%", "==", "!=", "<", "<=", ">", ">=":
+      # Arithmetic and comparison operators need numeric conversion
       let bothInts = (l.kind == vkInt and r.kind == vkInt)
+      let lf = toFloat(l)
+      let rf = toFloat(r)
+
       case e.op
       of "+":
         if bothInts: valInt(l.i + r.i)
-        else: valFloat(toFloat(l) + toFloat(r))
+        else: valFloat(lf + rf)
       of "-":
         if bothInts: valInt(l.i - r.i)
-        else: valFloat(toFloat(l) - toFloat(r))
+        else: valFloat(lf - rf)
       of "*":
         if bothInts: valInt(l.i * r.i)
-        else: valFloat(toFloat(l) * toFloat(r))
+        else: valFloat(lf * rf)
       of "/":
         if bothInts: valInt(l.i div r.i)
-        else: valFloat(toFloat(l) / toFloat(r))
+        else: valFloat(lf / rf)
       of "%":
         if bothInts: valInt(l.i mod r.i)
-        else: valFloat(toFloat(l).float mod toFloat(r).float)
-      else: valNil()  # should never reach
-    
-    of "&":
-      # String concatenation - convert both operands to strings
-      valString($l & $r)
-
-    of "==", "!=", "<", "<=", ">", ">=":
-      # Comparison operators - convert to float for comparison
-      let lf = toFloat(l)
-      let rf = toFloat(r)
-      case e.op
+        else: valFloat(lf mod rf)
       of "==": valBool(lf == rf)
       of "!=": valBool(lf != rf)
       of "<":  valBool(lf <  rf)
       of "<=": valBool(lf <= rf)
       of ">":  valBool(lf >  rf)
       of ">=": valBool(lf >= rf)
-      else: valNil()  # should never reach
+      else: valNil()  # Should never reach here
+    
+    # Range operators - return a special range value for for-loop iteration
+    of "..", "..<":
+      # For runtime, we'll create a custom value type that represents a range
+      # For simplicity, we'll store it as a map with "start" and "end" keys
+      let rangeMap = initTable[string, Value]()
+      var rangeVal = valMap()
+      rangeVal.map["start"] = valInt(toInt(l))
+      if e.op == "..":
+        rangeVal.map["end"] = valInt(toInt(r))  # Inclusive
+      else:  # ..<
+        rangeVal.map["end"] = valInt(toInt(r) - 1)  # Exclusive, so subtract 1
+      rangeVal.map["is_range"] = valBool(true)
+      rangeVal
+    
     else:
       quit "Unknown binary op: " & e.op
 
   of ekCall:
     evalCall(e.funcName, e.args, env)
+
+  of ekArray:
+    var elements: seq[Value] = @[]
+    for elem in e.elements:
+      elements.add(evalExpr(elem, env))
+    Value(kind: vkArray, arr: elements)
+
+  of ekIndex:
+    let target = evalExpr(e.indexTarget, env)
+    let index = evalExpr(e.indexExpr, env)
+    if target.kind != vkArray:
+      quit "Cannot index non-array value"
+    let idx = toInt(index)
+    if idx < 0 or idx >= target.arr.len:
+      quit "Index out of bounds: " & $idx & " (array length: " & $target.arr.len & ")"
+    target.arr[idx]
 
 # ------------------------------------------------------------------------------
 # Statement Execution
@@ -399,11 +437,19 @@ proc execStmt*(s: Stmt; env: ref Env): ExecResult =
     # Evaluate the iterable expression
     let iterableVal = evalExpr(s.forIterable, env)
     
-    # For now, we need to handle the iterable as a range-like construct
-    # This is a simplified implementation - a full implementation would need
-    # to support various iterable types
-    if iterableVal.kind == vkInt:
-      # Simple case: iterate from 0 to value-1
+    # Handle different iterable types
+    if iterableVal.kind == vkMap and "is_range" in iterableVal.map and iterableVal.map["is_range"].b:
+      # Range value created by .. or ..< operators
+      let startVal = toInt(iterableVal.map["start"])
+      let endVal = toInt(iterableVal.map["end"])
+      for i in startVal .. endVal:
+        let loopEnv = newEnv(env)
+        defineVar(loopEnv, s.forVar, valInt(i))
+        let res = execBlock(s.forBody, loopEnv)
+        if res.hasReturn:
+          return res
+    elif iterableVal.kind == vkInt:
+      # Simple case: iterate from 0 to value-1 (backward compatibility)
       for i in 0 ..< iterableVal.i:
         let loopEnv = newEnv(env)
         defineVar(loopEnv, s.forVar, valInt(i))
@@ -412,8 +458,7 @@ proc execStmt*(s: Stmt; env: ref Env): ExecResult =
           return res
     else:
       # For other cases, we could extend this to handle custom iterables
-      # For now, just treat it as an error
-      quit "Runtime Error: Cannot iterate over non-range value in for loop"
+      quit "Runtime Error: Cannot iterate over value in for loop (not a range or integer)"
 
     noReturn()
 

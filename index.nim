@@ -2,7 +2,7 @@
 # Parses index.md for Nim code blocks and executes them using Nimini
 
 import strutils, tables, os
-import src/nimini/[runtime, tokenizer, parser, autopragma]
+import src/nimini
 
 # Helper to convert Value to int (handles both int and float values)
 proc valueToInt(v: Value): int =

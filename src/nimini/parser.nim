@@ -112,6 +112,16 @@ proc parsePrefix(p: var Parser): Expr =
     discard expect(p, tkRParen, "Expected ')'")
     e
 
+  of tkLBracket:
+    discard p.advance()
+    var elements: seq[Expr] = @[]
+    if p.cur().kind != tkRBracket:
+      elements.add(parseExpr(p))
+      while match(p, tkComma):
+        elements.add(parseExpr(p))
+    discard expect(p, tkRBracket, "Expected ']'")
+    newArray(elements, t.line, t.col)
+
   else:
     quit "Unexpected token in expression at line " & $t.line
 
@@ -121,6 +131,15 @@ proc parseExpr(p: var Parser; prec=0): Expr =
   var left = parsePrefix(p)
   while true:
     let cur = p.cur()
+    
+    # Handle array indexing
+    if cur.kind == tkLBracket:
+      discard p.advance()
+      let indexExpr = parseExpr(p)
+      discard expect(p, tkRBracket, "Expected ']'")
+      left = newIndex(left, indexExpr, cur.line, cur.col)
+      continue
+    
     var isOp = false
     var opLexeme = ""
 
@@ -167,12 +186,19 @@ proc parseIf(p: var Parser): Stmt =
   let body = parseBlock(p)
   var node = newIf(cond, body, tok.line, tok.col)
 
+  # Skip newlines before checking for elif
+  while p.cur().kind == tkNewline:
+    discard p.advance()
+  
   while p.cur().kind == tkIdent and p.cur().lexeme == "elif":
     discard p.advance()
     let c = parseExpr(p)
     discard expect(p, tkColon, "Expected ':'")
     discard expect(p, tkNewline, "Expected newline")
     node.addElif(c, parseBlock(p))
+    # Skip newlines before checking for next elif or else
+    while p.cur().kind == tkNewline:
+      discard p.advance()
 
   if p.cur().kind == tkIdent and p.cur().lexeme == "else":
     discard p.advance()
