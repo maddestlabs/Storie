@@ -69,6 +69,49 @@
         const urlParams = new URLSearchParams(window.location.search);
         const gistId = urlParams.get('gist');
         let gistMarkdown = null;
+        let moduleReady = false;
+        let gistReady = false;
+        
+        function tryLoadGist() {
+            // Only load if both module and gist are ready
+            if (moduleReady && gistReady && gistMarkdown) {
+                console.log('Loading markdown from gist (' + gistMarkdown.length + ' bytes)');
+                try {
+                    // Call the exported C function
+                    // Note: ccall with 'string' type handles memory allocation automatically
+                    if (typeof Module.ccall === 'function') {
+                        // Add null terminator and use proper string handling
+                        var result = Module.ccall(
+                            'loadMarkdownFromJS',  // name
+                            null,                   // return type
+                            ['string'],            // argument types
+                            [gistMarkdown],        // arguments
+                            { async: false }       // options
+                        );
+                        document.getElementById('status').textContent = 'Running from gist - Press ESC to quit';
+                        console.log('Successfully loaded gist content');
+                    } else if (typeof Module._loadMarkdownFromJS === 'function') {
+                        // Fallback: manually allocate string in WASM memory
+                        console.log('Using manual string allocation');
+                        var len = Module.lengthBytesUTF8(gistMarkdown) + 1;
+                        var strPtr = Module._malloc(len);
+                        Module.stringToUTF8(gistMarkdown, strPtr, len);
+                        Module._loadMarkdownFromJS(strPtr);
+                        Module._free(strPtr);
+                        document.getElementById('status').textContent = 'Running from gist - Press ESC to quit';
+                        console.log('Successfully loaded gist content');
+                    } else {
+                        console.error('Module.ccall and Module._loadMarkdownFromJS not available');
+                        console.log('Available Module functions:', Object.keys(Module).filter(k => k.startsWith('_')));
+                        document.getElementById('status').textContent = 'Running (gist load failed) - Press ESC to quit';
+                    }
+                } catch (e) {
+                    console.error('Error loading gist markdown:', e);
+                    console.error('Stack trace:', e.stack);
+                    document.getElementById('status').innerHTML = '<span class="error">Error loading gist</span>';
+                }
+            }
+        }
         
         var Module = {
             canvas: document.getElementById('canvas'),
@@ -80,30 +123,18 @@
                 console.log(text);
             },
             onRuntimeInitialized: function() {
-                // If we have gist markdown, load it
-                if (gistMarkdown) {
-                    console.log('Loading markdown from gist (' + gistMarkdown.length + ' bytes)');
-                    try {
-                        // Call the exported C function
-                        if (typeof Module.ccall === 'function') {
-                            Module.ccall('loadMarkdownFromJS', null, ['string'], [gistMarkdown]);
-                            document.getElementById('status').textContent = 'Running from gist - Press ESC to quit';
-                        } else {
-                            console.error('Module.ccall not available');
-                            document.getElementById('status').textContent = 'Running (gist load failed) - Press ESC to quit';
-                        }
-                    } catch (e) {
-                        console.error('Error loading gist markdown:', e);
-                        document.getElementById('status').innerHTML = '<span class="error">Error loading gist</span>';
-                    }
-                } else {
-                    document.getElementById('status').textContent = 'Running - Press ESC to quit';
-                }
-                
+                moduleReady = true;
                 console.log('SDL3 with native TTF rendering initialized');
                 
                 // Set up aspect ratio-preserving resize
                 setupAspectRatioResize();
+                
+                // Try loading gist if it's ready
+                if (gistId) {
+                    tryLoadGist();
+                } else {
+                    document.getElementById('status').textContent = 'Running - Press ESC to quit';
+                }
             }
         };
         
@@ -131,7 +162,11 @@
                     if (mdFile) {
                         console.log('Found markdown file in gist:', mdFile.filename);
                         gistMarkdown = mdFile.content;
+                        gistReady = true;
                         document.getElementById('status').textContent = 'Loaded ' + mdFile.filename + ', starting...';
+                        
+                        // Try loading gist if module is ready
+                        tryLoadGist();
                     } else {
                         throw new Error('No .md file found in gist');
                     }

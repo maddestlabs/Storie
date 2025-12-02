@@ -392,8 +392,13 @@ proc reloadMarkdown(mdContent: string) =
     let lifecycle = if blk.lifecycle.len > 0: blk.lifecycle else: "none"
     echo "  Block ", i+1, ": lifecycle=", lifecycle, ", lines=", blk.code.countLines()
   
-  # Re-run init lifecycle blocks
-  runLifecycleBlocks("init")
+  # Only re-run init blocks if we're not in the middle of initialization
+  # (appState and niminiCtx must be ready)
+  if not appState.isNil and not niminiCtx.isNil:
+    echo "Re-running init lifecycle blocks..."
+    runLifecycleBlocks("init")
+  else:
+    echo "Skipping init blocks (app not fully initialized yet)"
 
 # ================================================================
 # NOTE: JavaScript text rendering hack removed
