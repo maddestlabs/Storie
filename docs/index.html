@@ -65,6 +65,11 @@
     </div>
     
     <script>
+        // Check for ?gist= URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const gistId = urlParams.get('gist');
+        let gistMarkdown = null;
+        
         var Module = {
             canvas: document.getElementById('canvas'),
             printErr: function(text) {
@@ -75,13 +80,68 @@
                 console.log(text);
             },
             onRuntimeInitialized: function() {
-                document.getElementById('status').textContent = 'Running - Press ESC to quit';
+                // If we have gist markdown, load it
+                if (gistMarkdown) {
+                    console.log('Loading markdown from gist (' + gistMarkdown.length + ' bytes)');
+                    try {
+                        // Call the exported C function
+                        if (typeof Module.ccall === 'function') {
+                            Module.ccall('loadMarkdownFromJS', null, ['string'], [gistMarkdown]);
+                            document.getElementById('status').textContent = 'Running from gist - Press ESC to quit';
+                        } else {
+                            console.error('Module.ccall not available');
+                            document.getElementById('status').textContent = 'Running (gist load failed) - Press ESC to quit';
+                        }
+                    } catch (e) {
+                        console.error('Error loading gist markdown:', e);
+                        document.getElementById('status').innerHTML = '<span class="error">Error loading gist</span>';
+                    }
+                } else {
+                    document.getElementById('status').textContent = 'Running - Press ESC to quit';
+                }
+                
                 console.log('SDL3 with native TTF rendering initialized');
                 
                 // Set up aspect ratio-preserving resize
                 setupAspectRatioResize();
             }
         };
+        
+        // Fetch gist if specified
+        if (gistId) {
+            document.getElementById('status').textContent = 'Loading gist ' + gistId + '...';
+            
+            fetch('https://api.github.com/gists/' + gistId)
+                .then(function(response) {
+                    if (!response.ok) {
+                        throw new Error('Gist not found (HTTP ' + response.status + ')');
+                    }
+                    return response.json();
+                })
+                .then(function(gist) {
+                    // Find first .md file in gist
+                    var mdFile = null;
+                    for (var filename in gist.files) {
+                        if (filename.endsWith('.md')) {
+                            mdFile = gist.files[filename];
+                            break;
+                        }
+                    }
+                    
+                    if (mdFile) {
+                        console.log('Found markdown file in gist:', mdFile.filename);
+                        gistMarkdown = mdFile.content;
+                        document.getElementById('status').textContent = 'Loaded ' + mdFile.filename + ', starting...';
+                    } else {
+                        throw new Error('No .md file found in gist');
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Error loading gist:', error);
+                    document.getElementById('status').innerHTML = '<span class="error">Error: ' + error.message + '</span>';
+                    gistMarkdown = null;
+                });
+        }
         
         function setupAspectRatioResize() {
             const canvas = Module.canvas;

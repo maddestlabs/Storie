@@ -1,7 +1,7 @@
 ## Storie SDL3 - Main engine using SDL3 platform backend with markdown support
 ## This is the SDL3 equivalent of storie.nim
 
-import strutils, times, os, math
+import strutils, times, os, math, parseopt
 import platform/platform_interface
 import platform/pixel_types
 import platform/sdl/sdl_platform
@@ -10,7 +10,8 @@ import src/nimini
 
 # Emscripten support
 when defined(emscripten):
-  {.passL: "-s EXPORTED_FUNCTIONS=['_main']".}
+  {.passL: "-s EXPORTED_FUNCTIONS=['_main','_loadMarkdownFromJS']".}
+  {.passL: "-s EXPORTED_RUNTIME_METHODS=['ccall','cwrap']".}
   {.emit: """
   #include <emscripten.h>
   """.}
@@ -328,27 +329,40 @@ type
     codeBlocks: seq[CodeBlock]
     
 var storieCtx: StorieContext
+var customMarkdownPath: string = ""  # Command-line specified markdown file
 
-proc loadAndParseMarkdown(): seq[CodeBlock] =
-  ## Load index.md and parse it for code blocks
+proc loadMarkdownContent(filePath: string): string =
+  ## Load markdown content from a file path
+  if fileExists(filePath):
+    return readFile(filePath)
+  else:
+    echo "Warning: ", filePath, " not found"
+    return ""
+
+proc loadAndParseMarkdown(markdownPath: string = ""): seq[CodeBlock] =
+  ## Load and parse markdown from specified path or default index.md
   when defined(emscripten):
-    # In WASM, embed the markdown at compile time
+    # In WASM, embed the default markdown at compile time
+    # (can be overridden via loadMarkdownFromJS)
     const mdContent = staticRead("index.md")
     return parseMarkdown(mdContent)
   else:
-    # Native: read from file
-    if fileExists("index.md"):
-      let mdContent = readFile("index.md")
+    # Native: read from file (custom path or default index.md)
+    let targetPath = if markdownPath.len > 0: markdownPath else: "index.md"
+    let mdContent = loadMarkdownContent(targetPath)
+    if mdContent.len > 0:
       return parseMarkdown(mdContent)
     else:
-      echo "Warning: index.md not found"
       return @[]
+
+proc reloadMarkdown(mdContent: string)  # Forward declaration
 
 proc initStorieContext() =
   ## Initialize the Storie context with markdown code blocks
-  storieCtx = StorieContext(codeBlocks: loadAndParseMarkdown())
+  storieCtx = StorieContext(codeBlocks: loadAndParseMarkdown(customMarkdownPath))
   
-  echo "Loaded ", storieCtx.codeBlocks.len, " code blocks from index.md"
+  let sourceName = if customMarkdownPath.len > 0: customMarkdownPath else: "index.md"
+  echo "Loaded ", storieCtx.codeBlocks.len, " code blocks from ", sourceName
   
   # Show what we loaded
   for i, blk in storieCtx.codeBlocks:
@@ -363,6 +377,23 @@ proc runLifecycleBlocks(lifecycle: string) =
   for blk in storieCtx.codeBlocks:
     if blk.lifecycle == lifecycle:
       discard executeCodeBlock(niminiCtx, blk)
+
+proc reloadMarkdown(mdContent: string) =
+  ## Reload markdown content at runtime (for both WASM gists and desktop)
+  if storieCtx.isNil:
+    storieCtx = StorieContext()
+  
+  storieCtx.codeBlocks = parseMarkdown(mdContent)
+  
+  echo "Reloaded ", storieCtx.codeBlocks.len, " code blocks from markdown"
+  
+  # Show what we loaded
+  for i, blk in storieCtx.codeBlocks:
+    let lifecycle = if blk.lifecycle.len > 0: blk.lifecycle else: "none"
+    echo "  Block ", i+1, ": lifecycle=", lifecycle, ", lines=", blk.code.countLines()
+  
+  # Re-run init lifecycle blocks
+  runLifecycleBlocks("init")
 
 # ================================================================
 # NOTE: JavaScript text rendering hack removed
@@ -454,6 +485,13 @@ when defined(emscripten):
   # Emscripten callback wrapper
   proc emMainLoop() {.cdecl, exportc.} =
     mainLoopIteration()
+  
+  # JavaScript-callable function to load markdown dynamically (for gist support)
+  proc loadMarkdownFromJS(mdPtr: cstring) {.cdecl, exportc.} =
+    ## Load markdown content from JavaScript (used for ?gist= parameter)
+    let mdContent = $mdPtr
+    echo "Loading markdown from JavaScript (", mdContent.len, " bytes)"
+    reloadMarkdown(mdContent)
 
 proc mainLoop() =
   ## Main loop - different implementation for native vs WASM
@@ -526,10 +564,47 @@ proc shutdownApp() =
   echo "Goodbye!"
 
 # ================================================================
+# COMMAND-LINE PARSING
+# ================================================================
+
+proc parseCommandLine() =
+  ## Parse command-line arguments (desktop only)
+  when not defined(emscripten):
+    var p = initOptParser()
+    while true:
+      p.next()
+      case p.kind
+      of cmdEnd: break
+      of cmdShortOption, cmdLongOption:
+        case p.key
+        of "markdown", "m":
+          customMarkdownPath = p.val
+          echo "Using custom markdown file: ", customMarkdownPath
+        of "help", "h":
+          echo "Storie SDL3 - Creative coding platform"
+          echo ""
+          echo "Usage: storie [options]"
+          echo ""
+          echo "Options:"
+          echo "  -m, --markdown FILE    Load markdown from custom file (default: index.md)"
+          echo "  -h, --help             Show this help message"
+          quit(0)
+        else:
+          echo "Unknown option: ", p.key
+          echo "Use --help for usage information"
+          quit(1)
+      of cmdArgument:
+        # Allow markdown file as positional argument
+        if customMarkdownPath.len == 0:
+          customMarkdownPath = p.key
+          echo "Using markdown file: ", customMarkdownPath
+
+# ================================================================
 # ENTRY POINT
 # ================================================================
 
 when isMainModule:
+  parseCommandLine()
   try:
     initApp()
     mainLoop()
