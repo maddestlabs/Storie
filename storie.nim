@@ -330,7 +330,8 @@ type
     
 var storieCtx: StorieContext
 var customMarkdownPath: string = ""  # Command-line specified markdown file
-var deferredInitNeeded: bool = false  # WASM: run init blocks after niminiCtx is ready
+var contentLoaded: bool = false  # Track if content has been loaded
+var contentInitRun: bool = false  # Track if init blocks have been executed
 
 proc loadMarkdownContent(filePath: string): string =
   ## Load markdown content from a file path
@@ -356,8 +357,6 @@ proc loadAndParseMarkdown(markdownPath: string = ""): seq[CodeBlock] =
     else:
       return @[]
 
-proc reloadMarkdown(mdContent: string)  # Forward declaration
-
 proc shouldWaitForGist(): bool =
   ## Check if JavaScript wants us to wait for a gist
   when defined(emscripten):
@@ -376,25 +375,6 @@ proc shouldWaitForGist(): bool =
   else:
     return false
 
-proc initStorieContext() =
-  ## Initialize the Storie context with markdown code blocks
-  when defined(emscripten):
-    # Check if JavaScript wants us to wait for a gist
-    if shouldWaitForGist():
-      echo "JavaScript requested: Skipping default markdown, waiting for gist"
-      storieCtx = StorieContext(codeBlocks: @[])
-      return
-  
-  storieCtx = StorieContext(codeBlocks: loadAndParseMarkdown(customMarkdownPath))
-  
-  let sourceName = if customMarkdownPath.len > 0: customMarkdownPath else: "index.md"
-  echo "Loaded ", storieCtx.codeBlocks.len, " code blocks from ", sourceName
-  
-  # Show what we loaded
-  for i, blk in storieCtx.codeBlocks:
-    let lifecycle = if blk.lifecycle.len > 0: blk.lifecycle else: "none"
-    echo "  Block ", i+1, ": lifecycle=", lifecycle, ", lines=", blk.code.countLines()
-
 proc runLifecycleBlocks(lifecycle: string) =
   ## Execute all code blocks for a given lifecycle
   if storieCtx.isNil:
@@ -404,39 +384,62 @@ proc runLifecycleBlocks(lifecycle: string) =
     if blk.lifecycle == lifecycle:
       discard executeCodeBlock(niminiCtx, blk)
 
-proc reloadMarkdown(mdContent: string) =
-  ## Reload markdown content at runtime (for both WASM gists and desktop)
+proc loadContent(mdContent: string) =
+  ## Load markdown content - can be called at any time
   if storieCtx.isNil:
     storieCtx = StorieContext()
   
   storieCtx.codeBlocks = parseMarkdown(mdContent)
+  contentLoaded = true
+  contentInitRun = false
   
-  echo "Reloaded ", storieCtx.codeBlocks.len, " code blocks from markdown"
+  echo "Loaded ", storieCtx.codeBlocks.len, " code blocks from markdown"
   
   # Show what we loaded
-  for i, blk in storieCtx.codeBlocks:
-    let lifecycle = if blk.lifecycle.len > 0: blk.lifecycle else: "none"
-    echo "  Block ", i+1, ": lifecycle=", lifecycle, ", lines=", blk.code.countLines()
-  
-  # Check if we can run init blocks
-  if niminiCtx.isNil:
-    echo "WARNING: niminiCtx is nil, deferring init blocks until app is ready"
-    deferredInitNeeded = true
-    return
-  
-  if appState.isNil:
-    echo "WARNING: appState is nil, deferring init blocks until app is ready"
-    deferredInitNeeded = true
-    return
-  
-  # Run init blocks now that we have the gist content
-  echo "Running init lifecycle blocks from reloaded markdown..."
   let initCount = storieCtx.codeBlocks.filterIt(it.lifecycle == "init").len
   let renderCount = storieCtx.codeBlocks.filterIt(it.lifecycle == "render").len
-  echo "  Init blocks: ", initCount, ", Render blocks: ", renderCount
-  runLifecycleBlocks("init")
+  let updateCount = storieCtx.codeBlocks.filterIt(it.lifecycle == "update").len
+  echo "  Init: ", initCount, ", Update: ", updateCount, ", Render: ", renderCount
+
+proc tryRunContentInit() =
+  ## Try to run init blocks if content is loaded but init hasn't run yet
+  if not contentLoaded:
+    return
   
-  echo "Markdown reload complete - render blocks will run on next frame"
+  if contentInitRun:
+    return
+  
+  if niminiCtx.isNil or appState.isNil:
+    # Not ready yet, will try again
+    return
+  
+  echo "Running content init blocks..."
+  runLifecycleBlocks("init")
+  contentInitRun = true
+  echo "Content initialized and ready"
+
+proc initStorieContext() =
+  ## Initialize the Storie context - loads default content unless waiting for dynamic content
+  storieCtx = StorieContext(codeBlocks: @[])
+  
+  when defined(emscripten):
+    # Check if JavaScript wants us to wait for a gist
+    if shouldWaitForGist():
+      echo "Waiting for dynamic content (gist), skipping default markdown"
+      return
+  
+  # Load default content
+  let mdContent = when defined(emscripten):
+    const content = staticRead("index.md")
+    content
+  else:
+    let targetPath = if customMarkdownPath.len > 0: customMarkdownPath else: "index.md"
+    loadMarkdownContent(targetPath)
+  
+  if mdContent.len > 0:
+    let sourceName = if customMarkdownPath.len > 0: customMarkdownPath else: "index.md"
+    echo "Loading default content from ", sourceName
+    loadContent(mdContent)
 
 # ================================================================
 # NOTE: JavaScript text rendering hack removed
@@ -484,6 +487,10 @@ proc mainLoopIteration() =
       echo "Window resized to ", appState.width, "x", appState.height, " pixels"
     else:
       discard
+  
+  # Try to initialize content if it hasn't been yet
+  # (handles race condition where gist loads during first few frames)
+  tryRunContentInit()
   
   # Fixed timestep update
   accumulator += deltaTime
@@ -543,7 +550,9 @@ when defined(emscripten):
     let mdContent = $mdPtr
     echo "Loading markdown from JavaScript (", mdContent.len, " bytes)"
     waitingForGist = false
-    reloadMarkdown(mdContent)
+    loadContent(mdContent)
+    # Try to run init immediately if app is ready
+    tryRunContentInit()
 
 proc mainLoop() =
   ## Main loop - different implementation for native vs WASM
@@ -597,18 +606,9 @@ proc initApp() =
   # Initialize storie context (load markdown)
   initStorieContext()
   
-  # Check if we have deferred init blocks from gist that loaded early
-  when defined(emscripten):
-    if deferredInitNeeded:
-      echo "Running deferred init blocks (gist loaded before app was ready)"
-      runLifecycleBlocks("init")
-      deferredInitNeeded = false
-    else:
-      # Run init lifecycle blocks normally
-      runLifecycleBlocks("init")
-  else:
-    # Run init lifecycle blocks
-    runLifecycleBlocks("init")
+  # Now that niminiCtx is ready, try to run content init
+  # (this handles both default content and early-loaded dynamic content)
+  tryRunContentInit()
   
   echo "Storie SDL3 initialized successfully!"
   echo "Press ESC to quit"
