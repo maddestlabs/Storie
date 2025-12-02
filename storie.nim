@@ -562,8 +562,9 @@ when defined(emscripten):
     echo "Loading markdown from JavaScript (", mdContent.len, " bytes)"
     waitingForGist = false
     loadContent(mdContent)
-    # Try to run init immediately if app is ready
-    tryRunContentInit()
+    # Don't try to run init here - let the normal flow handle it
+    # This might be called before niminiCtx exists
+    echo "Content loaded, will initialize when app is ready"
 
 proc mainLoop() =
   ## Main loop - different implementation for native vs WASM
