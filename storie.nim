@@ -4,6 +4,8 @@ import strutils, times, os, math, parseopt, sequtils
 import platform/platform_interface
 import platform/pixel_types
 import platform/sdl/sdl_platform
+import platform/sdl/sdl3_bindings/opengl
+import platform/render3d
 import storie_core
 import src/nimini
 
@@ -107,6 +109,13 @@ var niminiCtx: NiminiContext
 var gBgLayer: Layer
 var gFgLayer: Layer
 var gCurrentColor: Color = Color(r: 255, g: 255, b: 255, a: 255)
+
+# 3D rendering globals
+var g3DEnabled: bool = false
+var gCamera: Camera3D
+var gShader: Shader3D
+var gModelMatrix: Mat4 = identity()
+var gStoredMeshes: seq[Mesh3D] = @[]
 
 # ================================================================
 # NIMINI WRAPPERS - Bridge storie functions to Nimini
@@ -268,6 +277,214 @@ proc mathCos(env: ref Env; args: seq[Value]): Value {.nimini.} =
     return valFloat(cos(val))
   return valFloat(0.0)
 
+# 3D functions
+proc enable3D(env: ref Env; args: seq[Value]): Value {.nimini.} =
+  ## Enable 3D rendering mode
+  if not g3DEnabled:
+    echo "3D mode must be enabled at startup with --3d flag"
+  return valNil()
+
+proc setCamera(env: ref Env; args: seq[Value]): Value {.nimini.} =
+  ## Set camera position and target: setCamera(posX, posY, posZ, targetX, targetY, targetZ)
+  if not g3DEnabled:
+    return valNil()
+  
+  if args.len >= 6:
+    let posX = case args[0].kind
+      of vkFloat: args[0].f
+      of vkInt: args[0].i.float
+      else: 0.0
+    let posY = case args[1].kind
+      of vkFloat: args[1].f
+      of vkInt: args[1].i.float
+      else: 0.0
+    let posZ = case args[2].kind
+      of vkFloat: args[2].f
+      of vkInt: args[2].i.float
+      else: 0.0
+    let tarX = case args[3].kind
+      of vkFloat: args[3].f
+      of vkInt: args[3].i.float
+      else: 0.0
+    let tarY = case args[4].kind
+      of vkFloat: args[4].f
+      of vkInt: args[4].i.float
+      else: 0.0
+    let tarZ = case args[5].kind
+      of vkFloat: args[5].f
+      of vkInt: args[5].i.float
+      else: 0.0
+    
+    gCamera.position = vec3(posX, posY, posZ)
+    gCamera.target = vec3(tarX, tarY, tarZ)
+  return valNil()
+
+proc setCameraFov(env: ref Env; args: seq[Value]): Value {.nimini.} =
+  ## Set camera field of view in degrees
+  if not g3DEnabled:
+    return valNil()
+  
+  if args.len > 0:
+    let fov = case args[0].kind
+      of vkFloat: args[0].f
+      of vkInt: args[0].i.float
+      else: 60.0
+    gCamera.fov = fov
+  return valNil()
+
+proc resetTransform(env: ref Env; args: seq[Value]): Value {.nimini.} =
+  ## Reset model transformation matrix to identity
+  if not g3DEnabled:
+    return valNil()
+  gModelMatrix = identity()
+  return valNil()
+
+proc translate3D(env: ref Env; args: seq[Value]): Value {.nimini.} =
+  ## Translate: translate3D(x, y, z)
+  if not g3DEnabled:
+    return valNil()
+  
+  if args.len >= 3:
+    let x = case args[0].kind
+      of vkFloat: args[0].f
+      of vkInt: args[0].i.float
+      else: 0.0
+    let y = case args[1].kind
+      of vkFloat: args[1].f
+      of vkInt: args[1].i.float
+      else: 0.0
+    let z = case args[2].kind
+      of vkFloat: args[2].f
+      of vkInt: args[2].i.float
+      else: 0.0
+    gModelMatrix = gModelMatrix * translate(x, y, z)
+  return valNil()
+
+proc rotate3D(env: ref Env; args: seq[Value]): Value {.nimini.} =
+  ## Rotate: rotate3D(angleX, angleY, angleZ) - angles in radians
+  if not g3DEnabled:
+    return valNil()
+  
+  if args.len >= 3:
+    let ax = case args[0].kind
+      of vkFloat: args[0].f
+      of vkInt: args[0].i.float
+      else: 0.0
+    let ay = case args[1].kind
+      of vkFloat: args[1].f
+      of vkInt: args[1].i.float
+      else: 0.0
+    let az = case args[2].kind
+      of vkFloat: args[2].f
+      of vkInt: args[2].i.float
+      else: 0.0
+    if ax != 0: gModelMatrix = gModelMatrix * rotateX(ax)
+    if ay != 0: gModelMatrix = gModelMatrix * rotateY(ay)
+    if az != 0: gModelMatrix = gModelMatrix * rotateZ(az)
+  return valNil()
+
+proc scale3D(env: ref Env; args: seq[Value]): Value {.nimini.} =
+  ## Scale: scale3D(x, y, z)
+  if not g3DEnabled:
+    return valNil()
+  
+  if args.len >= 3:
+    let x = case args[0].kind
+      of vkFloat: args[0].f
+      of vkInt: args[0].i.float
+      else: 1.0
+    let y = case args[1].kind
+      of vkFloat: args[1].f
+      of vkInt: args[1].i.float
+      else: 1.0
+    let z = case args[2].kind
+      of vkFloat: args[2].f
+      of vkInt: args[2].i.float
+      else: 1.0
+    gModelMatrix = gModelMatrix * scale(x, y, z)
+  return valNil()
+
+proc drawCube(env: ref Env; args: seq[Value]): Value {.nimini.} =
+  ## Draw a cube: drawCube([size])
+  if not g3DEnabled:
+    return valNil()
+  
+  let size = if args.len > 0:
+    case args[0].kind
+    of vkFloat: args[0].f
+    of vkInt: args[0].i.float
+    else: 1.0
+  else:
+    1.0
+  
+  # Create color from current color
+  let color = vec3(gCurrentColor.r.float / 255.0, gCurrentColor.g.float / 255.0, gCurrentColor.b.float / 255.0)
+  let mesh = createCubeMesh(size, color)
+  
+  # Set uniforms
+  gShader.use()
+  gShader.setUniformMat4("uModel", gModelMatrix)
+  gShader.setUniformMat4("uView", gCamera.getViewMatrix())
+  let aspect = appState.width.float / appState.height.float
+  gShader.setUniformMat4("uProjection", gCamera.getProjectionMatrix(aspect))
+  
+  # Draw
+  mesh.drawMesh()
+  mesh.cleanup()
+  
+  return valNil()
+
+proc drawSphere(env: ref Env; args: seq[Value]): Value {.nimini.} =
+  ## Draw a sphere: drawSphere([radius], [segments])
+  if not g3DEnabled:
+    return valNil()
+  
+  let radius = if args.len > 0:
+    case args[0].kind
+    of vkFloat: args[0].f
+    of vkInt: args[0].i.float
+    else: 1.0
+  else:
+    1.0
+  
+  let segments = if args.len > 1:
+    case args[1].kind
+    of vkInt: args[1].i
+    of vkFloat: args[1].f.int
+    else: 16
+  else:
+    16
+  
+  # Create color from current color
+  let color = vec3(gCurrentColor.r.float / 255.0, gCurrentColor.g.float / 255.0, gCurrentColor.b.float / 255.0)
+  let mesh = createSphereMesh(radius, segments, color)
+  
+  # Set uniforms
+  gShader.use()
+  gShader.setUniformMat4("uModel", gModelMatrix)
+  gShader.setUniformMat4("uView", gCamera.getViewMatrix())
+  let aspect = appState.width.float / appState.height.float
+  gShader.setUniformMat4("uProjection", gCamera.getProjectionMatrix(aspect))
+  
+  # Draw
+  mesh.drawMesh()
+  mesh.cleanup()
+  
+  return valNil()
+
+proc clear3D(env: ref Env; args: seq[Value]): Value {.nimini.} =
+  ## Clear 3D scene with background color
+  if not g3DEnabled:
+    return valNil()
+  
+  let r = if args.len > 0: valueToInt(args[0]).float / 255.0 else: 0.0
+  let g = if args.len > 1: valueToInt(args[1]).float / 255.0 else: 0.0
+  let b = if args.len > 2: valueToInt(args[2]).float / 255.0 else: 0.0
+  
+  glClearColor(r, g, b, 1.0)
+  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
+  return valNil()
+
 proc createNiminiContext(): NiminiContext =
   ## Create a Nimini interpreter context with exposed APIs
   initRuntime()
@@ -282,7 +499,10 @@ proc createNiminiContext(): NiminiContext =
     print,
     clear, clearFg, setColor,
     fillRect, drawRect, fillCircle, drawCircle, drawLine, drawText, drawPixel,
-    mathSin, mathCos
+    mathSin, mathCos,
+    enable3D, setCamera, setCameraFov,
+    resetTransform, translate3D, rotate3D, scale3D,
+    drawCube, drawSphere, clear3D
   )
   
   # Register math aliases
@@ -536,24 +756,45 @@ proc mainLoopIteration() =
   # Try init again right before render (catches late-loading gists)
   tryRunContentInit()
   
-  # Clear layer commands
-  appState.bgLayer.renderBuffer.clearCommands()
-  appState.fgLayer.renderBuffer.clearCommands()
-  
-  # Run render lifecycle blocks
-  runLifecycleBlocks("render")
-  
-  # Composite layers and display
-  let compositeBuffer = newRenderBuffer(appState.width, appState.height)
-  compositeBuffer.clear(black())
-  
-  # Merge all layer commands in z-order
-  for cmd in appState.bgLayer.renderBuffer.commands:
-    compositeBuffer.commands.add(cmd)
-  for cmd in appState.fgLayer.renderBuffer.commands:
-    compositeBuffer.commands.add(cmd)
-  
-  appState.platform.display(compositeBuffer)
+  # Rendering based on mode
+  if g3DEnabled:
+    # 3D OpenGL rendering
+    glEnable(GL_DEPTH_TEST)
+    glDepthFunc(GL_LEQUAL)
+    glEnable(GL_CULL_FACE)
+    glCullFace(GL_BACK)
+    glFrontFace(GL_CCW)
+    
+    glClearColor(0.1, 0.1, 0.15, 1.0)
+    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
+    
+    glViewport(0, 0, appState.width.GLsizei, appState.height.GLsizei)
+    
+    # Run render lifecycle blocks (user will call 3D drawing functions)
+    runLifecycleBlocks("render")
+    
+    # Swap buffers
+    appState.platform.swapBuffers()
+  else:
+    # 2D SDL rendering
+    # Clear layer commands
+    appState.bgLayer.renderBuffer.clearCommands()
+    appState.fgLayer.renderBuffer.clearCommands()
+    
+    # Run render lifecycle blocks
+    runLifecycleBlocks("render")
+    
+    # Composite layers and display
+    let compositeBuffer = newRenderBuffer(appState.width, appState.height)
+    compositeBuffer.clear(black())
+    
+    # Merge all layer commands in z-order
+    for cmd in appState.bgLayer.renderBuffer.commands:
+      compositeBuffer.commands.add(cmd)
+    for cmd in appState.fgLayer.renderBuffer.commands:
+      compositeBuffer.commands.add(cmd)
+    
+    appState.platform.display(compositeBuffer)
   
   # Frame rate limiting (native only)
   when not defined(emscripten):
@@ -595,8 +836,10 @@ proc mainLoop() =
     while appState.running:
       mainLoopIteration()
 
-proc initApp() =
+proc initApp(enable3D: bool = false) =
   echo "Initializing Storie SDL3..."
+  if enable3D:
+    echo "3D mode enabled"
   
   # Create SDL platform
   appState = AppState()
@@ -609,10 +852,18 @@ proc initApp() =
   appState.lastFpsUpdate = 0.0
   
   # Initialize platform
-  if not appState.platform.init():
+  if not appState.platform.init(enable3D):
     echo "Failed to initialize SDL3 platform"
     quit(1)
   appState.platform.setTargetFps(appState.targetFps)
+  
+  # Initialize 3D if enabled
+  if enable3D:
+    g3DEnabled = true
+    gCamera = newCamera3D(vec3(0, 0, 5), vec3(0, 0, 0), 60.0)
+    gShader = createDefaultShader()
+    gModelMatrix = identity()
+    echo "3D rendering initialized"
   
   let (w, h) = appState.platform.getSize()
   appState.width = w
@@ -658,6 +909,8 @@ proc shutdownApp() =
 # COMMAND-LINE PARSING
 # ================================================================
 
+var enable3DMode: bool = false
+
 proc parseCommandLine() =
   ## Parse command-line arguments (desktop only)
   when not defined(emscripten):
@@ -671,6 +924,9 @@ proc parseCommandLine() =
         of "markdown", "m":
           customMarkdownPath = p.val
           echo "Using custom markdown file: ", customMarkdownPath
+        of "3d", "3D":
+          enable3DMode = true
+          echo "3D rendering mode enabled"
         of "help", "h":
           echo "Storie SDL3 - Creative coding platform"
           echo ""
@@ -678,6 +934,7 @@ proc parseCommandLine() =
           echo ""
           echo "Options:"
           echo "  -m, --markdown FILE    Load markdown from custom file (default: index.md)"
+          echo "  --3d                   Enable 3D rendering mode with OpenGL"
           echo "  -h, --help             Show this help message"
           quit(0)
         else:
@@ -697,7 +954,7 @@ proc parseCommandLine() =
 when isMainModule:
   parseCommandLine()
   try:
-    initApp()
+    initApp(enable3DMode)
     mainLoop()
   finally:
     shutdownApp()

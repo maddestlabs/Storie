@@ -6,6 +6,7 @@ type
   SDL_Window* {.importc, header: "SDL3/SDL.h", incompletestruct.} = object
   SDL_Renderer* {.importc, header: "SDL3/SDL.h", incompletestruct.} = object
   SDL_Texture* {.importc, header: "SDL3/SDL.h", incompletestruct.} = object
+  SDL_GLContext* = pointer  # OpenGL context handle
   SDL_Surface* {.importc, header: "SDL3/SDL_surface.h".} = object
     flags*: uint32
     format*: pointer

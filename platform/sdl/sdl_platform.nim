@@ -15,15 +15,21 @@ type
     width: int
     height: int
   
+  RenderMode* = enum
+    Render2D,    ## 2D SDL rendering (default)
+    Render3D     ## 3D OpenGL rendering
+  
   SdlPlatform* = ref object of Platform
     window: ptr SDL_Window
     renderer: ptr SDL_Renderer
+    glContext*: SDL_GLContext  ## OpenGL context for 3D rendering
     targetFps: float
     font*: ptr TTF_Font
     running*: bool
     glyphCache: Table[string, GlyphCacheEntry]  # Cache for rendered text
     windowWidth: int    # Window width in pixels
     windowHeight: int   # Window height in pixels
+    renderMode*: RenderMode  # Current rendering mode
 
 const
   DEFAULT_WINDOW_WIDTH = 1024
@@ -34,12 +40,29 @@ const
 # PLATFORM LIFECYCLE
 # ================================================================
 
-proc init*(p: SdlPlatform): bool =
+proc init*(p: SdlPlatform, enable3D: bool = false): bool =
   ## Initialize SDL3 and create window/renderer
+  ## Set enable3D = true to create OpenGL context for 3D rendering
   
   if SDL_Init(SDL_INIT_VIDEO or SDL_INIT_EVENTS) < 0:
     echo "SDL_Init failed: ", SDL_GetError()
     return false
+  
+  # Set OpenGL attributes if 3D is enabled
+  if enable3D:
+    when defined(emscripten):
+      # WebGL 2.0 settings
+      discard SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3)
+      discard SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0)
+      discard SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES)
+    else:
+      # Desktop OpenGL settings
+      discard SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3)
+      discard SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3)
+      discard SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE)
+    
+    discard SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1)
+    discard SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24)
   
   # Create window
   when defined(emscripten):
@@ -49,11 +72,12 @@ proc init*(p: SdlPlatform): bool =
     echo "Canvas size from Emscripten: ", canvasW, "x", canvasH, " (result=", result, ")"
     
     # Create window with canvas dimensions
+    let flags = if enable3D: SDL_WINDOW_OPENGL else: 0'u64
     p.window = SDL_CreateWindow(
       "Storie SDL3",
       canvasW,
       canvasH,
-      0  # No special flags
+      flags
     )
     
     # Verify and force set if needed
@@ -67,11 +91,12 @@ proc init*(p: SdlPlatform): bool =
         discard SDL_SetWindowSize(p.window, canvasW, canvasH)
   else:
     # Native: Create window with explicit dimensions
+    let flags = if enable3D: SDL_WINDOW_OPENGL or SDL_WINDOW_RESIZABLE else: SDL_WINDOW_RESIZABLE
     p.window = SDL_CreateWindow(
       "Storie SDL3",
       DEFAULT_WINDOW_WIDTH,
       DEFAULT_WINDOW_HEIGHT,
-      SDL_WINDOW_RESIZABLE
+      flags
     )
   
   if p.window.isNil:
@@ -79,18 +104,37 @@ proc init*(p: SdlPlatform): bool =
     SDL_Quit()
     return false
   
-  p.renderer = SDL_CreateRenderer(p.window, nil)
-  
-  if p.renderer.isNil:
-    echo "SDL_CreateRenderer failed: ", SDL_GetError()
-    SDL_DestroyWindow(p.window)
-    SDL_Quit()
-    return false
+  # Initialize based on rendering mode
+  if enable3D:
+    p.renderMode = Render3D
+    p.glContext = SDL_GL_CreateContext(p.window)
+    if p.glContext.isNil:
+      echo "SDL_GL_CreateContext failed: ", SDL_GetError()
+      SDL_DestroyWindow(p.window)
+      SDL_Quit()
+      return false
+    
+    # Enable VSync
+    discard SDL_GL_SetSwapInterval(1)
+    
+    echo "OpenGL context created for 3D rendering"
+  else:
+    p.renderMode = Render2D
+    p.renderer = SDL_CreateRenderer(p.window, nil)
+    
+    if p.renderer.isNil:
+      echo "SDL_CreateRenderer failed: ", SDL_GetError()
+      SDL_DestroyWindow(p.window)
+      SDL_Quit()
+      return false
   
   # Initialize SDL_ttf (now available for both native and Emscripten)
   if not TTF_Init():
     echo "TTF_Init failed: ", SDL_GetError()
-    SDL_DestroyRenderer(p.renderer)
+    if not p.renderer.isNil:
+      SDL_DestroyRenderer(p.renderer)
+    if not p.glContext.isNil:
+      SDL_GL_DestroyContext(p.glContext)
     SDL_DestroyWindow(p.window)
     SDL_Quit()
     return false
@@ -114,7 +158,10 @@ proc init*(p: SdlPlatform): bool =
     echo "Failed to load font from any path: ", SDL_GetError()
     echo "Tried paths: ", fontPaths
     TTF_Quit()
-    SDL_DestroyRenderer(p.renderer)
+    if not p.renderer.isNil:
+      SDL_DestroyRenderer(p.renderer)
+    if not p.glContext.isNil:
+      SDL_GL_DestroyContext(p.glContext)
     SDL_DestroyWindow(p.window)
     SDL_Quit()
     return false
@@ -148,6 +195,8 @@ proc shutdown*(p: SdlPlatform) =
   TTF_Quit()
   if not p.renderer.isNil:
     SDL_DestroyRenderer(p.renderer)
+  if not p.glContext.isNil:
+    SDL_GL_DestroyContext(p.glContext)
   if not p.window.isNil:
     SDL_DestroyWindow(p.window)
   SDL_Quit()
@@ -287,8 +336,16 @@ proc pollEvents*(p: SdlPlatform): seq[InputEvent] =
 # RENDERING
 # ================================================================
 
+proc swapBuffers*(p: SdlPlatform) =
+  ## Swap OpenGL buffers (call after 3D rendering)
+  if p.renderMode == Render3D:
+    SDL_GL_SwapWindow(p.window)
+
 proc display*(p: SdlPlatform, renderBuffer: RenderBuffer) =
-  ## Execute draw commands from RenderBuffer
+  ## Execute draw commands from RenderBuffer (2D mode only)
+  if p.renderMode == Render3D:
+    echo "Warning: display() called in 3D mode. Use OpenGL directly and call swapBuffers()"
+    return
   
   # Clear screen with background color
   let bg = renderBuffer.backgroundColor

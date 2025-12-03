@@ -23,6 +23,7 @@ import sdl3_bindings/events
 import sdl3_bindings/render
 import sdl3_bindings/audio
 import sdl3_bindings/ttf
+import sdl3_bindings/opengl
 
 export build_config
 export types
@@ -31,3 +32,4 @@ export events
 export render
 export audio
 export ttf
+export opengl
