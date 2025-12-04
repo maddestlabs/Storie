@@ -229,7 +229,7 @@ proc loadFont*(p: SdlPlatform, path: string, size: float = 16.0): bool =
 # PLATFORM QUERY
 # ================================================================
 
-proc getSize*(p: SdlPlatform): tuple[width, height: int] =
+method getSize*(p: SdlPlatform): tuple[width, height: int] =
   ## Get window size in pixels
   var w, h: cint
   discard SDL_GetWindowSize(p.window, addr w, addr h)
@@ -237,7 +237,7 @@ proc getSize*(p: SdlPlatform): tuple[width, height: int] =
   p.windowHeight = h.int
   return (p.windowWidth, p.windowHeight)
 
-proc getCapabilities*(p: SdlPlatform): PlatformCapabilities =
+method getCapabilities*(p: SdlPlatform): PlatformCapabilities =
   ## Return SDL3 capabilities
   return PlatformCapabilities(
     maxTextureSize: 4096,  # Common max texture size
@@ -250,7 +250,7 @@ proc getCapabilities*(p: SdlPlatform): PlatformCapabilities =
 # INPUT HANDLING
 # ================================================================
 
-proc pollEvents*(p: SdlPlatform): seq[InputEvent] =
+method pollEvents*(p: SdlPlatform): seq[InputEvent] =
   ## Poll SDL3 events and convert to InputEvents
   var events: seq[InputEvent] = @[]
   var sdlEvent: SDL_Event
@@ -341,7 +341,7 @@ method swapBuffers*(p: SdlPlatform) =
   if p.renderMode == Render3D:
     SDL_GL_SwapWindow(p.window)
 
-proc display*(p: SdlPlatform, renderBuffer: RenderBuffer) =
+method display*(p: SdlPlatform, renderBuffer: RenderBuffer) =
   ## Execute draw commands from RenderBuffer (2D mode only)
   if p.renderMode == Render3D:
     echo "Warning: display() called in 3D mode. Use OpenGL directly and call swapBuffers()"
@@ -496,11 +496,11 @@ proc display*(p: SdlPlatform, renderBuffer: RenderBuffer) =
 # TIMING
 # ================================================================
 
-proc setTargetFps*(p: SdlPlatform, fps: float) =
+method setTargetFps*(p: SdlPlatform, fps: float) =
   ## Set target frame rate
   p.targetFps = fps
 
-proc sleepFrame*(p: SdlPlatform, deltaTime: float) =
+method sleepFrame*(p: SdlPlatform, deltaTime: float) =
   ## Sleep to maintain target FPS
   if p.targetFps > 0:
     let targetFrameTime = 1.0 / p.targetFps

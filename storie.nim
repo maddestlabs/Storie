@@ -16,6 +16,8 @@ when defined(sdl3):
 else:
   import platform/raylib/raylib_platform
   import platform/raylib/raylib_render3d
+  # Import WindowShouldClose from raylib but exclude Color to avoid conflict
+  from platform/raylib/raylib_bindings/core import WindowShouldClose
   echo "Using Raylib backend"
 
 # Emscripten support
@@ -822,15 +824,22 @@ when defined(emscripten):
     echo "Content loaded, will initialize when app is ready"
 
 proc mainLoop() =
-  ## Main loop - different implementation for native vs WASM
-  when defined(emscripten):
-    # Emscripten: 0 fps = use requestAnimationFrame (browser controls timing)
-    {.emit: """
-    emscripten_set_main_loop(emMainLoop, 0, 1);
-    """.}
+  ## Main loop - different implementation for backends
+  when defined(sdl3):
+    # SDL3: use emscripten_set_main_loop for WASM, traditional loop for native
+    when defined(emscripten):
+      # Emscripten: 0 fps = use requestAnimationFrame (browser controls timing)
+      {.emit: """
+      emscripten_set_main_loop(emMainLoop, 0, 1);
+      """.}
+    else:
+      # Native: traditional while loop
+      while appState.running:
+        mainLoopIteration()
   else:
-    # Native: traditional while loop
-    while appState.running:
+    # Raylib: use raylib's native WindowShouldClose loop
+    # This works for both native and WASM without ASYNCIFY issues
+    while not WindowShouldClose() and appState.running:
       mainLoopIteration()
 
 proc initApp(enable3D: bool = false) =

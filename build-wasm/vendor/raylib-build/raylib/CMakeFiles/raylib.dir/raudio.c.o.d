@@ -12,7 +12,6 @@ raylib/CMakeFiles/raylib.dir/raudio.c.o: \
   /workspaces/Storie/emsdk/upstream/lib/clang/22/include/__stdarg_va_copy.h \
   /workspaces/Storie/emsdk/upstream/lib/clang/22/include/stdbool.h \
   /workspaces/Storie/emsdk/upstream/emscripten/cache/sysroot/include/stdbool.h \
-  /workspaces/Storie/vendor/raylib-src/src/config.h \
   /workspaces/Storie/vendor/raylib-src/src/utils.h \
   /workspaces/Storie/vendor/raylib-src/src/external/miniaudio.h \
   /workspaces/Storie/emsdk/upstream/lib/clang/22/include/stddef.h \

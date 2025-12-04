@@ -68,7 +68,8 @@ emcmake cmake ../../../"$RAYLIB_SRC" \
     -DPLATFORM=Web \
     -DBUILD_EXAMPLES=OFF \
     -DBUILD_GAMES=OFF \
-    -DSUPPORT_BUSY_WAIT_LOOP=OFF
+    -DUSE_EXTERNAL_GLFW=OFF \
+    -DCUSTOMIZE_BUILD=ON
 
 emmake make -j$(nproc)
 echo "✓ WASM raylib built"

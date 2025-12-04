@@ -6,12 +6,12 @@ set -e
 
 VERSION="0.1.0"
 OUTPUT_DIR="docs"
-FILE_BASE="storie"
+FILE_BASE="storie-raylib"
 
 show_help() {
     cat << EOF
-Storie WASM compiler v$VERSION
-Compile Storie for web deployment (Raylib or SDL3)
+Storie WASM compiler (Raylib) v$VERSION
+Compile Storie for web deployment with Raylib backend
 
 Usage: ./build-web.sh [OPTIONS]
 
@@ -19,18 +19,17 @@ Options:
   -h, --help            Show this help message
   -v, --version         Show version information
   -r, --release         Compile in release mode (optimized)
-  -s, --serve           Start a local web server after compilation
   -o, --output DIR      Output directory (default: docs)
-  --sdl3                Use SDL3 backend instead of Raylib (default)
 
 Examples:
-  ./build-web.sh                # Compile to docs/ (Raylib)
-  ./build-web.sh -r             # Compile optimized (Raylib)
-  ./build-web.sh --sdl3         # Use SDL3 backend
-  ./build-web.sh -s             # Compile and serve
-  ./build-web.sh -o web         # Output to web/ directory
+  ./build-web.sh                # Compile to docs/
+  ./build-web.sh -r             # Compile optimized
 
-The compiled files will be placed in the specified output directory.
+The compiled files will be placed in the specified output directory as:
+  - storie-raylib.js
+  - storie-raylib.wasm
+
+Note: Use build-web-sdl.sh for SDL3 backend.
 
 Requirements:
   - Nim compiler with Emscripten support
@@ -46,8 +45,6 @@ EOF
 }
 
 RELEASE_MODE=""
-SERVE=false
-BACKEND_FLAG=""
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -57,19 +54,11 @@ while [[ $# -gt 0 ]]; do
             exit 0
             ;;
         -v|--version)
-            echo "Storie WASM compiler version $VERSION"
+            echo "Storie WASM compiler (Raylib) version $VERSION"
             exit 0
             ;;
         -r|--release)
             RELEASE_MODE="-d:release --opt:size"
-            shift
-            ;;
-        --sdl3)
-            BACKEND_FLAG="-d:sdl3"
-            shift
-            ;;
-        -s|--serve)
-            SERVE=true
             shift
             ;;
         -o|--output)
@@ -107,7 +96,7 @@ fi
 # Create output directory if it doesn't exist
 mkdir -p "$OUTPUT_DIR"
 
-echo "Compiling Storie to WASM..."
+echo "Compiling Storie to WASM (Raylib backend)..."
 echo "Output directory: $OUTPUT_DIR"
 echo ""
 
@@ -125,45 +114,28 @@ NIM_OPTS="c
   --threads:off
   --exceptions:goto
   $RELEASE_MODE
-  $BACKEND_FLAG
-  --nimcache:nimcache_wasm
-  -o:$OUTPUT_DIR/storie.js
-  ${FILE_BASE}.nim"
+  --nimcache:nimcache_wasm_raylib
+  -o:$OUTPUT_DIR/${FILE_BASE}.js
+  storie.nim"
 
-# Backend-specific Emscripten flags
-if [ -z "$BACKEND_FLAG" ]; then
-    # Raylib backend (default)
-    echo "Using Raylib backend for WASM..."
-    RAYLIB_LIB="build-wasm/vendor/raylib-build/raylib/libraylib.a"
-    
-    export EMCC_CFLAGS="-s ALLOW_MEMORY_GROWTH=1 \
-      -s INITIAL_MEMORY=33554432 \
-      -s STACK_SIZE=4194304 \
-      -s ENVIRONMENT=web \
-      -s MODULARIZE=0 \
-      -s EXPORT_NAME='Module' \
-      -s ASSERTIONS=1 \
-      --preload-file docs/assets@/assets \
-      -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap','UTF8ToString','FS'] \
-      -s USE_WEBGL2=1 \
-      -s MIN_WEBGL_VERSION=2 \
-      -s MAX_WEBGL_VERSION=2 \
-      $RAYLIB_LIB"
-else
-    # SDL3 backend
-    echo "Using SDL3 backend for WASM..."
-    export EMCC_CFLAGS="-s ALLOW_MEMORY_GROWTH=1 \
-      -s INITIAL_MEMORY=67108864 \
-      -s STACK_SIZE=8388608 \
-      -s ENVIRONMENT=web \
-      -s MODULARIZE=0 \
-      -s EXPORT_NAME='Module' \
-      -s ASSERTIONS=1 \
-      --preload-file docs/assets@/assets \
-      -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap','UTF8ToString','FS'] \
-      -s USE_WEBGL2=1 \
-      -s FULL_ES3=1"
-fi
+# Raylib backend - uses GLFW for web compatibility
+echo "Using Raylib backend for WASM..."
+RAYLIB_LIB="build-wasm/vendor/raylib-build/raylib/libraylib.a"
+
+export EMCC_CFLAGS="-s USE_GLFW=3 \
+  -s ALLOW_MEMORY_GROWTH=1 \
+  -s TOTAL_MEMORY=67108864 \
+  -s ASYNCIFY \
+  -s ASSERTIONS=1 \
+  -s WASM=1 \
+  -s ENVIRONMENT=web \
+  -s MODULARIZE=0 \
+  -s EXPORT_NAME='Module' \
+  --preload-file docs/assets@/assets \
+  -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap','UTF8ToString','FS'] \
+  -DPLATFORM_WEB \
+  -DGRAPHICS_API_OPENGL_ES2 \
+  $RAYLIB_LIB"
 
 # Additional optimization flags for release mode
 if [ ! -z "$RELEASE_MODE" ]; then
@@ -172,8 +144,8 @@ fi
 
 # Compile
 echo "Running Nim compiler with Emscripten..."
-echo "  Input: ${FILE_BASE}.nim"
-echo "  Output: $OUTPUT_DIR/storie.js"
+echo "  Input: storie.nim"
+echo "  Output: $OUTPUT_DIR/${FILE_BASE}.js"
 echo ""
 
 nim $NIM_OPTS
@@ -188,76 +160,10 @@ echo ""
 echo "✓ Compilation successful!"
 echo ""
 echo "Output files:"
-echo "  - $OUTPUT_DIR/storie.js"
-echo "  - $OUTPUT_DIR/storie.wasm"
+echo "  - $OUTPUT_DIR/${FILE_BASE}.js"
+echo "  - $OUTPUT_DIR/${FILE_BASE}.wasm"
 echo ""
-
-# Create a minimal HTML file if it doesn't exist
-if [ ! -f "$OUTPUT_DIR/index.html" ]; then
-    cat > "$OUTPUT_DIR/index.html" << 'HTMLEOF'
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Storie</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background: #000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            font-family: monospace;
-            color: #fff;
-        }
-        #container {
-            text-align: center;
-        }
-        #canvas {
-            border: 1px solid #333;
-            image-rendering: pixelated;
-            image-rendering: crisp-edges;
-        }
-        #status {
-            margin-top: 10px;
-            font-size: 12px;
-            color: #888;
-        }
-        .error {
-            color: #f44;
-        }
-    </style>
-</head>
-<body>
-    <div id="container">
-        <canvas id="canvas" width="800" height="600"></canvas>
-        <div id="status">Loading...</div>
-    </div>
-    
-    <script>
-        var Module = {
-            canvas: document.getElementById('canvas'),
-            printErr: function(text) {
-                console.error(text);
-                document.getElementById('status').innerHTML = '<span class="error">' + text + '</span>';
-            },
-            print: function(text) {
-                console.log(text);
-            },
-            onRuntimeInitialized: function() {
-                document.getElementById('status').textContent = 'Running - Press ESC to quit';
-            }
-        };
-    </script>
-    <script src="storie.js"></script>
-</body>
-</html>
-HTMLEOF
-    echo "  - $OUTPUT_DIR/index.html (created)"
-fi
+echo "Build complete!"
 
 # Copy index.md if it exists (needed at runtime for WASM)
 if [ -f "index.md" ]; then
@@ -267,30 +173,3 @@ fi
 
 echo ""
 echo "Build complete!"
-
-# Start web server if requested
-if [ "$SERVE" = true ]; then
-    echo ""
-    echo "Starting local web server..."
-    echo "Open http://localhost:8000 in your browser"
-    echo "Press Ctrl+C to stop"
-    echo ""
-    
-    # Try different server options
-    if command -v python3 &> /dev/null; then
-        cd "$OUTPUT_DIR" && python3 -m http.server 8000
-    elif command -v python &> /dev/null; then
-        cd "$OUTPUT_DIR" && python -m SimpleHTTPServer 8000
-    elif command -v php &> /dev/null; then
-        cd "$OUTPUT_DIR" && php -S localhost:8000
-    else
-        echo "Error: No web server available (tried python3, python, php)"
-        echo "Please serve the $OUTPUT_DIR/ directory manually."
-        exit 1
-    fi
-else
-    echo ""
-    echo "To test the build:"
-    echo "  cd $OUTPUT_DIR && python3 -m http.server 8000"
-    echo "  Then open http://localhost:8000 in your browser"
-fi
