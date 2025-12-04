@@ -1,8 +1,24 @@
-## 3D rendering utilities - camera, matrices, and primitive rendering
-## Provides high-level 3D rendering primitives
+## DEPRECATED: This file is kept for backwards compatibility only
+## 
+## The 3D rendering system has been refactored:
+##   - Use render3d_interface.nim for backend-agnostic types
+##   - Use sdl/sdl_render3d.nim for SDL3+OpenGL implementation
+##   - Use raylib/raylib_render3d.nim for Raylib implementation
+##
+## This file now re-exports the SDL3 implementation for compatibility.
 
-import math
-import sdl/sdl3_bindings/opengl
+{.deprecated: "Use render3d_interface or sdl/sdl_render3d instead".}
+
+import render3d_interface
+import sdl/sdl_render3d
+
+export render3d_interface
+export sdl_render3d
+
+# Old code below preserved for reference but deprecated
+when false:
+  import math
+  import sdl/sdl3_bindings/opengl
 
 type
   Vec3* = object

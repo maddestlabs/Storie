@@ -18,9 +18,10 @@ type
 # PLATFORM INTERFACE METHODS (must be implemented by each backend)
 # ================================================================
 
-method init*(p: Platform): bool {.base.} =
+method init*(p: Platform, enable3D: bool = false): bool {.base.} =
   ## Initialize the platform backend
   ## Returns true on success
+  ## enable3D: whether to initialize with 3D rendering support
   quit "Platform.init() must be overridden"
 
 method shutdown*(p: Platform) {.base.} =
@@ -52,3 +53,8 @@ method sleepFrame*(p: Platform, frameTime: float) {.base.} =
   ## Sleep to maintain target framerate
   ## frameTime is time already spent in this frame
   quit "Platform.sleepFrame() must be overridden"
+
+method swapBuffers*(p: Platform) {.base.} =
+  ## Swap rendering buffers (if needed by the backend)
+  ## Some backends handle this internally in display()
+  discard

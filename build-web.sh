@@ -1,6 +1,6 @@
 #!/bin/bash
 # Storie WASM compiler script
-# Compiles storie.nim to WebAssembly using Emscripten's SDL3
+# Compiles storie.nim to WebAssembly (Raylib by default, SDL3 with --sdl3)
 
 set -e
 
@@ -11,7 +11,7 @@ FILE_BASE="storie"
 show_help() {
     cat << EOF
 Storie WASM compiler v$VERSION
-Compile Storie for web deployment
+Compile Storie for web deployment (Raylib or SDL3)
 
 Usage: ./build-web.sh [OPTIONS]
 
@@ -21,10 +21,12 @@ Options:
   -r, --release         Compile in release mode (optimized)
   -s, --serve           Start a local web server after compilation
   -o, --output DIR      Output directory (default: docs)
+  --sdl3                Use SDL3 backend instead of Raylib (default)
 
 Examples:
-  ./build-web.sh                # Compile to docs/
-  ./build-web.sh -r             # Compile optimized
+  ./build-web.sh                # Compile to docs/ (Raylib)
+  ./build-web.sh -r             # Compile optimized (Raylib)
+  ./build-web.sh --sdl3         # Use SDL3 backend
   ./build-web.sh -s             # Compile and serve
   ./build-web.sh -o web         # Output to web/ directory
 
@@ -45,6 +47,7 @@ EOF
 
 RELEASE_MODE=""
 SERVE=false
+BACKEND_FLAG=""
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -59,6 +62,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         -r|--release)
             RELEASE_MODE="-d:release --opt:size"
+            shift
+            ;;
+        --sdl3)
+            BACKEND_FLAG="-d:sdl3"
             shift
             ;;
         -s|--serve)
@@ -118,24 +125,45 @@ NIM_OPTS="c
   --threads:off
   --exceptions:goto
   $RELEASE_MODE
+  $BACKEND_FLAG
   --nimcache:nimcache_wasm
   -o:$OUTPUT_DIR/storie.js
   ${FILE_BASE}.nim"
 
-# Emscripten flags - Link against SDL3 and SDL3_ttf built with CMake
-# Optional: Preload font assets for TTF rendering (comment out to load fonts at runtime via fetch)
-# Note: Runtime loading requires setting up FS and fetching fonts via JavaScript
-export EMCC_CFLAGS="-s ALLOW_MEMORY_GROWTH=1 \
-  -s INITIAL_MEMORY=67108864 \
-  -s STACK_SIZE=8388608 \
-  -s ENVIRONMENT=web \
-  -s MODULARIZE=0 \
-  -s EXPORT_NAME='Module' \
-  -s ASSERTIONS=1 \
-  --preload-file docs/assets@/assets \
-  -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap','UTF8ToString','FS'] \
-  -s USE_WEBGL2=1 \
-  -s FULL_ES3=1"
+# Backend-specific Emscripten flags
+if [ -z "$BACKEND_FLAG" ]; then
+    # Raylib backend (default)
+    echo "Using Raylib backend for WASM..."
+    RAYLIB_LIB="build-wasm/vendor/raylib-build/raylib/libraylib.a"
+    
+    export EMCC_CFLAGS="-s ALLOW_MEMORY_GROWTH=1 \
+      -s INITIAL_MEMORY=33554432 \
+      -s STACK_SIZE=4194304 \
+      -s ENVIRONMENT=web \
+      -s MODULARIZE=0 \
+      -s EXPORT_NAME='Module' \
+      -s ASSERTIONS=1 \
+      --preload-file docs/assets@/assets \
+      -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap','UTF8ToString','FS'] \
+      -s USE_WEBGL2=1 \
+      -s MIN_WEBGL_VERSION=2 \
+      -s MAX_WEBGL_VERSION=2 \
+      $RAYLIB_LIB"
+else
+    # SDL3 backend
+    echo "Using SDL3 backend for WASM..."
+    export EMCC_CFLAGS="-s ALLOW_MEMORY_GROWTH=1 \
+      -s INITIAL_MEMORY=67108864 \
+      -s STACK_SIZE=8388608 \
+      -s ENVIRONMENT=web \
+      -s MODULARIZE=0 \
+      -s EXPORT_NAME='Module' \
+      -s ASSERTIONS=1 \
+      --preload-file docs/assets@/assets \
+      -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap','UTF8ToString','FS'] \
+      -s USE_WEBGL2=1 \
+      -s FULL_ES3=1"
+fi
 
 # Additional optimization flags for release mode
 if [ ! -z "$RELEASE_MODE" ]; then

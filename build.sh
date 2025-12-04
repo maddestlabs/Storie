@@ -1,12 +1,13 @@
 #!/bin/bash
-# Storie native build script - SDL3 backend
+# Storie native build script - Raylib backend (default)
+# Use --sdl3 flag for SDL3 backend
 
 VERSION="0.1.0"
 
 show_help() {
     cat << EOF
 storie v$VERSION
-SDL3-based engine with markdown content (index.md)
+Raylib-based engine with markdown content (index.md)
 
 Usage: ./build.sh [OPTIONS]
 
@@ -15,10 +16,12 @@ Options:
   -v, --version         Show version information
   -r, --release         Compile in release mode (optimized)
   -c, --compile-only    Compile without running
+  --sdl3                Use SDL3 backend instead of Raylib (default)
 
 Examples:
-  ./build.sh                           # Compile and run
-  ./build.sh -r                        # Compile optimized and run
+  ./build.sh                           # Compile and run (Raylib)
+  ./build.sh -r                        # Compile optimized and run (Raylib)
+  ./build.sh --sdl3                    # Use SDL3 backend
   ./build.sh -c                        # Compile only, don't run
 
 Note: Content is loaded from index.md at runtime.
@@ -28,6 +31,7 @@ EOF
 
 RELEASE_MODE=""
 COMPILE_ONLY=false
+BACKEND_FLAG=""
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -42,6 +46,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         -r|--release)
             RELEASE_MODE="-d:release"
+            shift
+            ;;
+        --sdl3)
+            BACKEND_FLAG="-d:sdl3"
             shift
             ;;
         -c|--compile-only)
@@ -67,8 +75,21 @@ if [ ! -f "index.md" ]; then
 fi
 
 # Compile
-echo "Compiling Storie (SDL3 native)..."
-nim c $RELEASE_MODE storie.nim
+if [ -z "$BACKEND_FLAG" ]; then
+    echo "Compiling Storie (Raylib backend)..."
+    # Raylib linking
+    RAYLIB_PATH="build/vendor/raylib-build/raylib"
+    RAYLIB_LIB="build/vendor/raylib-build/raylib/libraylib.a"
+    
+    nim c $RELEASE_MODE \
+        --passL:"$RAYLIB_LIB" \
+        --passL:"-lm -lpthread -ldl -lrt" \
+        --passL:"-lX11" \
+        storie.nim
+else
+    echo "Compiling Storie (SDL3 backend)..."
+    nim c $RELEASE_MODE $BACKEND_FLAG storie.nim
+fi
 
 if [ $? -ne 0 ]; then
     echo "Compilation failed!"

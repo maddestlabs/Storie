@@ -1,13 +1,22 @@
-## Storie SDL3 - Main engine using SDL3 platform backend with markdown support
+## Storie - Main engine with markdown support
+## Default backend: Raylib (use -d:sdl3 for SDL3 backend)
 
 import strutils, times, os, math, parseopt, sequtils
 import platform/platform_interface
 import platform/pixel_types
-import platform/sdl/sdl_platform
-import platform/sdl/sdl3_bindings/opengl
-import platform/render3d
+import platform/render3d_interface
 import storie_core
 import src/nimini
+
+# Backend selection: raylib by default, SDL3 with -d:sdl3
+when defined(sdl3):
+  import platform/sdl/sdl_platform
+  import platform/sdl/sdl_render3d
+  echo "Using SDL3 backend"
+else:
+  import platform/raylib/raylib_platform
+  import platform/raylib/raylib_render3d
+  echo "Using Raylib backend"
 
 # Emscripten support
 when defined(emscripten):
@@ -89,7 +98,7 @@ proc valueToInt(v: Value): int =
 
 type
   AppState = ref object
-    platform: SdlPlatform
+    platform: Platform
     width, height: int
     bgLayer: Layer
     fgLayer: Layer
@@ -112,10 +121,12 @@ var gCurrentColor: Color = Color(r: 255, g: 255, b: 255, a: 255)
 
 # 3D rendering globals
 var g3DEnabled: bool = false
+when defined(sdl3):
+  var gRenderer3D: SdlRenderer3D
+else:
+  var gRenderer3D: RaylibRenderer3D
 var gCamera: Camera3D
-var gShader: Shader3D
 var gModelMatrix: Mat4 = identity()
-var gStoredMeshes: seq[Mesh3D] = @[]
 
 # ================================================================
 # NIMINI WRAPPERS - Bridge storie functions to Nimini
@@ -317,6 +328,10 @@ proc setCamera(env: ref Env; args: seq[Value]): Value {.nimini.} =
     
     gCamera.position = vec3(posX, posY, posZ)
     gCamera.target = vec3(tarX, tarY, tarZ)
+    
+    # Update renderer camera
+    let aspect = appState.width.float / appState.height.float
+    gRenderer3D.setCamera(gCamera, aspect)
   return valNil()
 
 proc setCameraFov(env: ref Env; args: seq[Value]): Value {.nimini.} =
@@ -419,18 +434,11 @@ proc drawCube(env: ref Env; args: seq[Value]): Value {.nimini.} =
   
   # Create color from current color
   let color = vec3(gCurrentColor.r.float / 255.0, gCurrentColor.g.float / 255.0, gCurrentColor.b.float / 255.0)
-  let mesh = createCubeMesh(size, color)
+  let meshData = createCubeMeshData(size, color)
   
-  # Set uniforms
-  gShader.use()
-  gShader.setUniformMat4("uModel", gModelMatrix)
-  gShader.setUniformMat4("uView", gCamera.getViewMatrix())
-  let aspect = appState.width.float / appState.height.float
-  gShader.setUniformMat4("uProjection", gCamera.getProjectionMatrix(aspect))
-  
-  # Draw
-  mesh.drawMesh()
-  mesh.cleanup()
+  # Update renderer and draw
+  gRenderer3D.setModelTransform(gModelMatrix)
+  gRenderer3D.drawMesh(meshData)
   
   return valNil()
 
@@ -457,18 +465,11 @@ proc drawSphere(env: ref Env; args: seq[Value]): Value {.nimini.} =
   
   # Create color from current color
   let color = vec3(gCurrentColor.r.float / 255.0, gCurrentColor.g.float / 255.0, gCurrentColor.b.float / 255.0)
-  let mesh = createSphereMesh(radius, segments, color)
+  let meshData = createSphereMeshData(radius, segments, color)
   
-  # Set uniforms
-  gShader.use()
-  gShader.setUniformMat4("uModel", gModelMatrix)
-  gShader.setUniformMat4("uView", gCamera.getViewMatrix())
-  let aspect = appState.width.float / appState.height.float
-  gShader.setUniformMat4("uProjection", gCamera.getProjectionMatrix(aspect))
-  
-  # Draw
-  mesh.drawMesh()
-  mesh.cleanup()
+  # Update renderer and draw
+  gRenderer3D.setModelTransform(gModelMatrix)
+  gRenderer3D.drawMesh(meshData)
   
   return valNil()
 
@@ -481,8 +482,7 @@ proc clear3D(env: ref Env; args: seq[Value]): Value {.nimini.} =
   let g = if args.len > 1: valueToInt(args[1]).float / 255.0 else: 0.0
   let b = if args.len > 2: valueToInt(args[2]).float / 255.0 else: 0.0
   
-  glClearColor(r, g, b, 1.0)
-  glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
+  gRenderer3D.beginFrame3D(r, g, b)
   return valNil()
 
 proc createNiminiContext(): NiminiContext =
@@ -758,22 +758,19 @@ proc mainLoopIteration() =
   
   # Rendering based on mode
   if g3DEnabled:
-    # 3D OpenGL rendering
-    glEnable(GL_DEPTH_TEST)
-    glDepthFunc(GL_LEQUAL)
-    glEnable(GL_CULL_FACE)
-    glCullFace(GL_BACK)
-    glFrontFace(GL_CCW)
+    # 3D rendering through abstracted renderer
+    gRenderer3D.setViewport(0, 0, appState.width, appState.height)
+    gRenderer3D.beginFrame3D(0.1, 0.1, 0.15)
     
-    glClearColor(0.1, 0.1, 0.15, 1.0)
-    glClear(GL_COLOR_BUFFER_BIT or GL_DEPTH_BUFFER_BIT)
-    
-    glViewport(0, 0, appState.width.GLsizei, appState.height.GLsizei)
+    # Update camera in renderer
+    let aspect = appState.width.float / appState.height.float
+    gRenderer3D.setCamera(gCamera, aspect)
     
     # Run render lifecycle blocks (user will call 3D drawing functions)
     runLifecycleBlocks("render")
     
-    # Swap buffers
+    # End frame and swap buffers
+    gRenderer3D.endFrame3D()
     appState.platform.swapBuffers()
   else:
     # 2D SDL rendering
@@ -837,20 +834,28 @@ proc mainLoop() =
       mainLoopIteration()
 
 proc initApp(enable3D: bool = false) =
-  echo "Initializing Storie SDL3..."
-  
-  # For WASM builds, always enable 3D to support dynamic content loading
-  when defined(emscripten):
-    let use3D = true
-    echo "3D mode enabled (WASM default)"
+  when defined(sdl3):
+    echo "Initializing Storie with SDL3 backend..."
   else:
-    let use3D = enable3D
+    echo "Initializing Storie with Raylib backend..."
+  
+  # 3D mode is optional for all platforms
+  let use3D = enable3D
+  when defined(emscripten):
+    if use3D:
+      echo "3D mode enabled (WASM)"
+    else:
+      echo "2D mode (WASM default)"
+  else:
     if enable3D:
       echo "3D mode enabled"
   
-  # Create SDL platform
+  # Create platform backend
   appState = AppState()
-  appState.platform = SdlPlatform()
+  when defined(sdl3):
+    appState.platform = SdlPlatform()
+  else:
+    appState.platform = RaylibPlatform()
   appState.running = true
   appState.targetFps = 60.0
   appState.totalTime = 0.0
@@ -868,9 +873,16 @@ proc initApp(enable3D: bool = false) =
   if use3D:
     g3DEnabled = true
     gCamera = newCamera3D(vec3(0, 0, 5), vec3(0, 0, 0), 60.0)
-    gShader = createDefaultShader()
-    gModelMatrix = identity()
-    echo "3D rendering initialized"
+    when defined(sdl3):
+      gRenderer3D = newSdlRenderer3D()
+    else:
+      gRenderer3D = newRaylibRenderer3D()
+    if not gRenderer3D.init3D():
+      echo "Failed to initialize 3D renderer"
+      g3DEnabled = false
+    else:
+      gModelMatrix = identity()
+      echo "3D rendering initialized"
   
   let (w, h) = appState.platform.getSize()
   appState.width = w

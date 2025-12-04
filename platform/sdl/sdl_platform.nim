@@ -37,10 +37,10 @@ const
   DEFAULT_FONT_SIZE = 16
 
 # ================================================================
-# PLATFORM LIFECYCLE
+# PLATFORM IMPLEMENTATION
 # ================================================================
 
-proc init*(p: SdlPlatform, enable3D: bool = false): bool =
+method init*(p: SdlPlatform, enable3D: bool = false): bool =
   ## Initialize SDL3 and create window/renderer
   ## Set enable3D = true to create OpenGL context for 3D rendering
   
@@ -181,7 +181,7 @@ proc init*(p: SdlPlatform, enable3D: bool = false): bool =
   
   return true
 
-proc shutdown*(p: SdlPlatform) =
+method shutdown*(p: SdlPlatform) =
   ## Clean up SDL3 resources
   
   # Clear glyph cache
@@ -336,7 +336,7 @@ proc pollEvents*(p: SdlPlatform): seq[InputEvent] =
 # RENDERING
 # ================================================================
 
-proc swapBuffers*(p: SdlPlatform) =
+method swapBuffers*(p: SdlPlatform) =
   ## Swap OpenGL buffers (call after 3D rendering)
   if p.renderMode == Render3D:
     SDL_GL_SwapWindow(p.window)

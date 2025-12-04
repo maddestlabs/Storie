@@ -1,0 +1,28 @@
+raylib/CMakeFiles/raylib.dir/rshapes.c.o: \
+  /workspaces/Storie/vendor/raylib-src/src/rshapes.c \
+  /workspaces/Storie/vendor/raylib-src/src/raylib.h \
+  /workspaces/Storie/emsdk/upstream/emscripten/cache/sysroot/include/compat/stdarg.h \
+  /workspaces/Storie/emsdk/upstream/lib/clang/22/include/stdarg.h \
+  /workspaces/Storie/emsdk/upstream/emscripten/cache/sysroot/include/stdarg.h \
+  /workspaces/Storie/emsdk/upstream/lib/clang/22/include/__stdarg_header_macro.h \
+  /workspaces/Storie/emsdk/upstream/lib/clang/22/include/__stdarg___gnuc_va_list.h \
+  /workspaces/Storie/emsdk/upstream/lib/clang/22/include/__stdarg_va_list.h \
+  /workspaces/Storie/emsdk/upstream/lib/clang/22/include/__stdarg_va_arg.h \
+  /workspaces/Storie/emsdk/upstream/lib/clang/22/include/__stdarg___va_copy.h \
+  /workspaces/Storie/emsdk/upstream/lib/clang/22/include/__stdarg_va_copy.h \
+  /workspaces/Storie/emsdk/upstream/lib/clang/22/include/stdbool.h \
+  /workspaces/Storie/emsdk/upstream/emscripten/cache/sysroot/include/stdbool.h \
+  /workspaces/Storie/vendor/raylib-src/src/config.h \
+  /workspaces/Storie/vendor/raylib-src/src/rlgl.h \
+  /workspaces/Storie/emsdk/upstream/emscripten/cache/sysroot/include/compat/math.h \
+  /workspaces/Storie/emsdk/upstream/emscripten/cache/sysroot/include/math.h \
+  /workspaces/Storie/emsdk/upstream/emscripten/cache/sysroot/include/features.h \
+  /workspaces/Storie/emsdk/upstream/emscripten/cache/sysroot/include/bits/alltypes.h \
+  /workspaces/Storie/emsdk/upstream/lib/clang/22/include/float.h \
+  /workspaces/Storie/emsdk/upstream/emscripten/cache/sysroot/include/float.h \
+  /workspaces/Storie/emsdk/upstream/lib/clang/22/include/__float_header_macro.h \
+  /workspaces/Storie/emsdk/upstream/lib/clang/22/include/__float_float.h \
+  /workspaces/Storie/emsdk/upstream/lib/clang/22/include/__float_infinity_nan.h \
+  /workspaces/Storie/emsdk/upstream/emscripten/cache/sysroot/include/compat/stdlib.h \
+  /workspaces/Storie/emsdk/upstream/emscripten/cache/sysroot/include/stdlib.h \
+  /workspaces/Storie/emsdk/upstream/emscripten/cache/sysroot/include/alloca.h
