@@ -73,12 +73,22 @@
             scriptSrc = 'storie-sdl.js';
             platformName = 'SDL3';
             platformColor = 'platform-sdl';
+            platformSize = '~1.1MB';
+        } else if (platform === 'sdl-full' || platform === 'sdl3-full') {
+            scriptSrc = 'storie-sdl-full.js';
+            platformName = 'SDL3 (Full)';
+            platformColor = 'platform-sdl';
             platformSize = '~2.6MB';
+        } else if (platform === 'raylib-full') {
+            scriptSrc = 'storie-raylib-full.js';
+            platformName = 'Raylib (Full)';
+            platformColor = 'platform-raylib';
+            platformSize = '~425KB';
         } else {
             scriptSrc = 'storie-raylib.js';
             platformName = 'Raylib';
             platformColor = 'platform-raylib';
-            platformSize = '~409KB';
+            platformSize = '~425KB';
         }
         
         // Update platform info
@@ -208,14 +218,19 @@
             document.getElementById('status').innerHTML = 
                 `<span class="error">Failed to load ${platformName} backend. Have you built it?</span>`;
             document.getElementById('platform-info').innerHTML = 
-                `Try: <a href="?platform=raylib" style="color:#4a9">Raylib</a> | <a href="?platform=sdl" style="color:#94a">SDL3</a>`;
+                `Try: <a href="?platform=raylib" style="color:#4a9">Raylib</a> | ` +
+                `<a href="?platform=raylib-full" style="color:#4a9">Raylib Full</a> | ` +
+                `<a href="?platform=sdl" style="color:#94a">SDL3</a> | ` +
+                `<a href="?platform=sdl-full" style="color:#94a">SDL3 Full</a>`;
         };
         document.body.appendChild(script);
         
         // Add platform switcher hint to console
         console.log('Switch platform with URL parameter:');
-        console.log('  ?platform=raylib (default, 409KB)');
-        console.log('  ?platform=sdl (2.6MB)');
+        console.log('  ?platform=raylib (default, ~425KB)');
+        console.log('  ?platform=raylib-full (~425KB, more fonts)');
+        console.log('  ?platform=sdl (~1.1MB)');
+        console.log('  ?platform=sdl-full (~2.6MB, more fonts)');
         console.log('Load from gist: ?gist=YOUR_GIST_ID');
     </script>
 </body>
