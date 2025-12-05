@@ -91,22 +91,108 @@ method pollEvents*(p: RaylibPlatform): seq[InputEvent] =
       newHeight: p.windowHeight
     ))
   
-  # Check for key presses (ESC key)
-  if IsKeyPressed(KEY_ESCAPE):
-    events.add(InputEvent(
-      kind: KeyEvent,
-      keyCode: KEY_ESCAPE,
-      keyAction: Press
-    ))
+  # Poll all keyboard keys for press/release
+  # Common keys that users might want to check
+  const keysToCheck = [
+    KEY_SPACE, KEY_ENTER, KEY_ESCAPE, KEY_BACKSPACE, KEY_TAB,
+    KEY_RIGHT, KEY_LEFT, KEY_UP, KEY_DOWN,
+    KEY_A, KEY_B, KEY_C, KEY_D, KEY_E, KEY_F, KEY_G, KEY_H,
+    KEY_I, KEY_J, KEY_K, KEY_L, KEY_M, KEY_N, KEY_O, KEY_P,
+    KEY_Q, KEY_R, KEY_S, KEY_T, KEY_U, KEY_V, KEY_W, KEY_X,
+    KEY_Y, KEY_Z,
+    KEY_ZERO, KEY_ONE, KEY_TWO, KEY_THREE, KEY_FOUR,
+    KEY_FIVE, KEY_SIX, KEY_SEVEN, KEY_EIGHT, KEY_NINE,
+    KEY_LEFT_SHIFT, KEY_LEFT_CONTROL, KEY_LEFT_ALT
+  ]
   
-  # Check for mouse button presses
-  if IsMouseButtonPressed(MOUSE_BUTTON_LEFT):
+  for key in keysToCheck:
+    if IsKeyPressed(key.cint):
+      events.add(InputEvent(
+        kind: KeyEvent,
+        keyCode: key,
+        keyAction: Press
+      ))
+    if IsKeyReleased(key.cint):
+      events.add(InputEvent(
+        kind: KeyEvent,
+        keyCode: key,
+        keyAction: Release
+      ))
+  
+  # Check for character input (for text input)
+  let ch = GetCharPressed()
+  if ch > 0:
+    # Store character as a special key event that can be queried
+    # We'll handle this separately in storie.nim
+    discard
+  
+  # Mouse buttons
+  if IsMouseButtonPressed(MOUSE_BUTTON_LEFT.cint):
     events.add(InputEvent(
       kind: MouseEvent,
       button: Left,
       mouseX: GetMouseX().int,
       mouseY: GetMouseY().int,
       action: Press
+    ))
+  if IsMouseButtonReleased(MOUSE_BUTTON_LEFT.cint):
+    events.add(InputEvent(
+      kind: MouseEvent,
+      button: Left,
+      mouseX: GetMouseX().int,
+      mouseY: GetMouseY().int,
+      action: Release
+    ))
+  
+  if IsMouseButtonPressed(MOUSE_BUTTON_RIGHT.cint):
+    events.add(InputEvent(
+      kind: MouseEvent,
+      button: Right,
+      mouseX: GetMouseX().int,
+      mouseY: GetMouseY().int,
+      action: Press
+    ))
+  if IsMouseButtonReleased(MOUSE_BUTTON_RIGHT.cint):
+    events.add(InputEvent(
+      kind: MouseEvent,
+      button: Right,
+      mouseX: GetMouseX().int,
+      mouseY: GetMouseY().int,
+      action: Release
+    ))
+  
+  if IsMouseButtonPressed(MOUSE_BUTTON_MIDDLE.cint):
+    events.add(InputEvent(
+      kind: MouseEvent,
+      button: Middle,
+      mouseX: GetMouseX().int,
+      mouseY: GetMouseY().int,
+      action: Press
+    ))
+  if IsMouseButtonReleased(MOUSE_BUTTON_MIDDLE.cint):
+    events.add(InputEvent(
+      kind: MouseEvent,
+      button: Middle,
+      mouseX: GetMouseX().int,
+      mouseY: GetMouseY().int,
+      action: Release
+    ))
+  
+  # Mouse position (always track)
+  let mousePos = GetMousePosition()
+  events.add(InputEvent(
+    kind: MouseMoveEvent,
+    moveX: mousePos.x.int,
+    moveY: mousePos.y.int
+  ))
+  
+  # Mouse wheel
+  let wheel = GetMouseWheelMove()
+  if wheel != 0.0:
+    events.add(InputEvent(
+      kind: MouseScrollEvent,
+      scrollX: 0.0,
+      scrollY: wheel
     ))
   
   return events

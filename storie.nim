@@ -22,6 +22,16 @@ else:
   import platform/raylib/raylib_render3d
   # Import WindowShouldClose from raylib but exclude Color to avoid conflict
   from platform/raylib/raylib_bindings/core import WindowShouldClose
+  from platform/raylib/raylib_bindings/input import 
+    GetCharPressed,
+    KEY_SPACE, KEY_ENTER, KEY_ESCAPE, KEY_BACKSPACE, KEY_TAB,
+    KEY_RIGHT, KEY_LEFT, KEY_UP, KEY_DOWN,
+    KEY_A, KEY_B, KEY_C, KEY_D, KEY_E, KEY_F, KEY_G, KEY_H,
+    KEY_I, KEY_J, KEY_K, KEY_L, KEY_M, KEY_N, KEY_O, KEY_P,
+    KEY_Q, KEY_R, KEY_S, KEY_T, KEY_U, KEY_V, KEY_W, KEY_X,
+    KEY_Y, KEY_Z,
+    KEY_ZERO, KEY_ONE, KEY_TWO, KEY_THREE, KEY_FOUR,
+    KEY_FIVE, KEY_SIX, KEY_SEVEN, KEY_EIGHT, KEY_NINE
   export raylib_platform, raylib_render3d, WindowShouldClose
 
 # Emscripten support
@@ -71,6 +81,29 @@ var niminiCtx: NiminiContext
 var gBgLayer: Layer
 var gFgLayer: Layer
 var gCurrentColor: Color = Color(r: 255, g: 255, b: 255, a: 255)
+
+# Event handling globals
+type
+  InputState = object
+    # Keyboard state
+    keysPressed: array[512, bool]      # Keys pressed this frame
+    keysDown: array[512, bool]         # Keys currently held down
+    keysReleased: array[512, bool]     # Keys released this frame
+    charPressed: int                   # Last character pressed (for text input)
+    
+    # Mouse state
+    mouseX, mouseY: int                # Current mouse position
+    mouseDeltaX, mouseDeltaY: int      # Mouse movement since last frame
+    mouseButtons: array[5, bool]       # Mouse buttons currently down
+    mousePressed: array[5, bool]       # Mouse buttons pressed this frame
+    mouseReleased: array[5, bool]      # Mouse buttons released this frame
+    mouseWheelX, mouseWheelY: float    # Mouse wheel scroll
+    
+    # Touch state (for mobile/web)
+    touchX, touchY: int                # Primary touch position
+    touchActive: bool                  # Is touch currently active
+
+var gInputState: InputState
 
 # 3D rendering globals
 var g3DEnabled: bool = false
@@ -240,6 +273,105 @@ proc mathCos(env: ref Env; args: seq[Value]): Value {.nimini.} =
       else: 0.0
     return valFloat(cos(val))
   return valFloat(0.0)
+
+# ================================================================
+# EVENT HANDLING FUNCTIONS
+# ================================================================
+
+# Keyboard functions
+proc isKeyPressed(env: ref Env; args: seq[Value]): Value {.nimini.} =
+  ## Check if a key was pressed this frame (keyCode)
+  if args.len > 0:
+    let key = valueToInt(args[0])
+    if key >= 0 and key < 512:
+      return valBool(gInputState.keysPressed[key])
+  return valBool(false)
+
+proc isKeyDown(env: ref Env; args: seq[Value]): Value {.nimini.} =
+  ## Check if a key is currently held down (keyCode)
+  if args.len > 0:
+    let key = valueToInt(args[0])
+    if key >= 0 and key < 512:
+      return valBool(gInputState.keysDown[key])
+  return valBool(false)
+
+proc isKeyReleased(env: ref Env; args: seq[Value]): Value {.nimini.} =
+  ## Check if a key was released this frame (keyCode)
+  if args.len > 0:
+    let key = valueToInt(args[0])
+    if key >= 0 and key < 512:
+      return valBool(gInputState.keysReleased[key])
+  return valBool(false)
+
+proc getCharPressed(env: ref Env; args: seq[Value]): Value {.nimini.} =
+  ## Get the last character pressed (for text input, returns 0 if none)
+  return valInt(gInputState.charPressed)
+
+# Mouse functions
+proc getMouseX(env: ref Env; args: seq[Value]): Value {.nimini.} =
+  ## Get current mouse X position
+  return valInt(gInputState.mouseX)
+
+proc getMouseY(env: ref Env; args: seq[Value]): Value {.nimini.} =
+  ## Get current mouse Y position
+  return valInt(gInputState.mouseY)
+
+proc getMouseDeltaX(env: ref Env; args: seq[Value]): Value {.nimini.} =
+  ## Get mouse X movement since last frame
+  return valInt(gInputState.mouseDeltaX)
+
+proc getMouseDeltaY(env: ref Env; args: seq[Value]): Value {.nimini.} =
+  ## Get mouse Y movement since last frame
+  return valInt(gInputState.mouseDeltaY)
+
+proc isMouseButtonPressed(env: ref Env; args: seq[Value]): Value {.nimini.} =
+  ## Check if mouse button was pressed this frame (0=left, 1=middle, 2=right)
+  if args.len > 0:
+    let btn = valueToInt(args[0])
+    if btn >= 0 and btn < 5:
+      return valBool(gInputState.mousePressed[btn])
+  return valBool(false)
+
+proc isMouseButtonDown(env: ref Env; args: seq[Value]): Value {.nimini.} =
+  ## Check if mouse button is currently held down (0=left, 1=middle, 2=right)
+  if args.len > 0:
+    let btn = valueToInt(args[0])
+    if btn >= 0 and btn < 5:
+      return valBool(gInputState.mouseButtons[btn])
+  return valBool(false)
+
+proc isMouseButtonReleased(env: ref Env; args: seq[Value]): Value {.nimini.} =
+  ## Check if mouse button was released this frame (0=left, 1=middle, 2=right)
+  if args.len > 0:
+    let btn = valueToInt(args[0])
+    if btn >= 0 and btn < 5:
+      return valBool(gInputState.mouseReleased[btn])
+  return valBool(false)
+
+proc getMouseWheelX(env: ref Env; args: seq[Value]): Value {.nimini.} =
+  ## Get horizontal mouse wheel movement
+  return valFloat(gInputState.mouseWheelX)
+
+proc getMouseWheelY(env: ref Env; args: seq[Value]): Value {.nimini.} =
+  ## Get vertical mouse wheel movement
+  return valFloat(gInputState.mouseWheelY)
+
+# Touch functions (same as mouse for compatibility)
+proc getTouchX(env: ref Env; args: seq[Value]): Value {.nimini.} =
+  ## Get touch X position (or mouse X if no touch)
+  if gInputState.touchActive:
+    return valInt(gInputState.touchX)
+  return valInt(gInputState.mouseX)
+
+proc getTouchY(env: ref Env; args: seq[Value]): Value {.nimini.} =
+  ## Get touch Y position (or mouse Y if no touch)
+  if gInputState.touchActive:
+    return valInt(gInputState.touchY)
+  return valInt(gInputState.mouseY)
+
+proc isTouchActive(env: ref Env; args: seq[Value]): Value {.nimini.} =
+  ## Check if touch is currently active (or left mouse button is down)
+  return valBool(gInputState.touchActive or gInputState.mouseButtons[0])
 
 # 3D functions
 proc enable3D(env: ref Env; args: seq[Value]): Value {.nimini.} =
@@ -453,6 +585,15 @@ proc createNiminiContext(): NiminiContext =
     clear, clearFg, setColor,
     fillRect, drawRect, fillCircle, drawCircle, drawLine, drawText, drawPixel,
     mathSin, mathCos,
+    # Keyboard events
+    isKeyPressed, isKeyDown, isKeyReleased, getCharPressed,
+    # Mouse events
+    getMouseX, getMouseY, getMouseDeltaX, getMouseDeltaY,
+    isMouseButtonPressed, isMouseButtonDown, isMouseButtonReleased,
+    getMouseWheelX, getMouseWheelY,
+    # Touch events
+    getTouchX, getTouchY, isTouchActive,
+    # 3D rendering
     enable3D, setCamera, setCameraFov,
     resetTransform, translate3D, rotate3D, scale3D,
     drawCube, drawSphere, clear3D
@@ -577,25 +718,89 @@ proc mainLoopIteration() =
   
   let fixedDt = 1.0 / appState.targetFps
   
+  # Reset per-frame input state
+  for i in 0..<512:
+    gInputState.keysPressed[i] = false
+    gInputState.keysReleased[i] = false
+  for i in 0..<5:
+    gInputState.mousePressed[i] = false
+    gInputState.mouseReleased[i] = false
+  gInputState.charPressed = 0
+  gInputState.mouseDeltaX = 0
+  gInputState.mouseDeltaY = 0
+  gInputState.mouseWheelX = 0.0
+  gInputState.mouseWheelY = 0.0
+  
+  # Poll character input directly (Raylib only for now)
+  when not defined(sdl3):
+    let ch = GetCharPressed()
+    if ch > 0:
+      gInputState.charPressed = ch.int
+  
   # Handle events
   let events = appState.platform.pollEvents()
   for event in events:
     case event.kind
     of KeyEvent:
-      if event.keyAction == Press:
-        # ESC key is code 27
-        if event.keyCode == 27:
-          appState.running = false
-        # Call input callback
-        if not inputCallback.isNil:
-          inputCallback()
+      let keyCode = event.keyCode
+      if keyCode >= 0 and keyCode < 512:
+        case event.keyAction
+        of Press:
+          gInputState.keysPressed[keyCode] = true
+          gInputState.keysDown[keyCode] = true
+          # ESC key is code 256 in Raylib, 27 in some systems
+          if keyCode == 27 or keyCode == 256:
+            appState.running = false
+        of Release:
+          gInputState.keysReleased[keyCode] = true
+          gInputState.keysDown[keyCode] = false
+        of Repeat:
+          discard  # Key repeat - already marked as down
+      
+      # Call input callback
+      if not inputCallback.isNil:
+        inputCallback()
+    
+    of MouseEvent:
+      let btnIdx = case event.button
+        of Left: 0
+        of Middle: 1
+        of Right: 2
+        else: 3
+      
+      if btnIdx < 5:
+        case event.action
+        of Press:
+          gInputState.mousePressed[btnIdx] = true
+          gInputState.mouseButtons[btnIdx] = true
+        of Release:
+          gInputState.mouseReleased[btnIdx] = true
+          gInputState.mouseButtons[btnIdx] = false
+        of Repeat:
+          discard
+    
+    of MouseMoveEvent:
+      let oldX = gInputState.mouseX
+      let oldY = gInputState.mouseY
+      gInputState.mouseX = event.moveX
+      gInputState.mouseY = event.moveY
+      gInputState.mouseDeltaX = event.moveX - oldX
+      gInputState.mouseDeltaY = event.moveY - oldY
+      
+      # Update touch position if touch is active
+      if gInputState.touchActive:
+        gInputState.touchX = event.moveX
+        gInputState.touchY = event.moveY
+    
+    of MouseScrollEvent:
+      gInputState.mouseWheelX = event.scrollX
+      gInputState.mouseWheelY = event.scrollY
+    
     of ResizeEvent:
       # Update dimensions on window resize
       appState.width = event.newWidth
       appState.height = event.newHeight
       echo "Window resized to ", appState.width, "x", appState.height, " pixels"
-    else:
-      discard
   
   # Fixed timestep update
   accumulator += deltaTime
@@ -768,6 +973,23 @@ proc initStorie*(
   
   # Create nimini context
   niminiCtx = createNiminiContext()
+  
+  # Add key constants to the environment
+  when not defined(sdl3):
+    # Register Raylib key constants in Nimini
+    niminiCtx.env.defineVar("KEY_SPACE", valInt(KEY_SPACE))
+    niminiCtx.env.defineVar("KEY_ENTER", valInt(KEY_ENTER))
+    niminiCtx.env.defineVar("KEY_ESCAPE", valInt(KEY_ESCAPE))
+    niminiCtx.env.defineVar("KEY_BACKSPACE", valInt(KEY_BACKSPACE))
+    niminiCtx.env.defineVar("KEY_TAB", valInt(KEY_TAB))
+    niminiCtx.env.defineVar("KEY_RIGHT", valInt(KEY_RIGHT))
+    niminiCtx.env.defineVar("KEY_LEFT", valInt(KEY_LEFT))
+    niminiCtx.env.defineVar("KEY_UP", valInt(KEY_UP))
+    niminiCtx.env.defineVar("KEY_DOWN", valInt(KEY_DOWN))
+    niminiCtx.env.defineVar("KEY_A", valInt(KEY_A))
+    niminiCtx.env.defineVar("KEY_W", valInt(KEY_W))
+    niminiCtx.env.defineVar("KEY_S", valInt(KEY_S))
+    niminiCtx.env.defineVar("KEY_D", valInt(KEY_D))
   
   echo "Storie initialized successfully!"
   echo "Press ESC to quit"

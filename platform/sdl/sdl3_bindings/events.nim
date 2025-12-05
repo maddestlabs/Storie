@@ -35,6 +35,7 @@ type
     SDL_EVENT_MOUSE_MOTION = 0x400
     SDL_EVENT_MOUSE_BUTTON_DOWN = 0x401
     SDL_EVENT_MOUSE_BUTTON_UP = 0x402
+    SDL_EVENT_MOUSE_WHEEL = 0x403
   
   SDL_Keycode* = distinct cint
   
@@ -70,6 +71,14 @@ type
     x*, y*: cfloat
     xrel*, yrel*: cfloat
   
+  SDL_MouseWheelEvent* {.importc, header: "SDL3/SDL_events.h".} = object
+    kind*: SDL_EventType
+    timestamp*: uint64
+    windowID*: uint32
+    which*: uint32
+    x*, y*: cfloat
+    direction*: uint32
+  
   SDL_WindowEvent* {.importc, header: "SDL3/SDL_events.h".} = object
     kind*: SDL_EventType
     timestamp*: uint64
@@ -81,6 +90,7 @@ type
     key*: SDL_KeyboardEvent
     button*: SDL_MouseButtonEvent
     motion*: SDL_MouseMotionEvent
+    wheel*: SDL_MouseWheelEvent
     window*: SDL_WindowEvent
 
 # Event functions

@@ -333,6 +333,14 @@ method pollEvents*(p: SdlPlatform): seq[InputEvent] =
         moveY: motion.y.int
       ))
     
+    of SDL_EVENT_MOUSE_WHEEL:
+      let wheel = sdlEvent.wheel
+      events.add(InputEvent(
+        kind: MouseScrollEvent,
+        scrollX: wheel.x,
+        scrollY: wheel.y
+      ))
+    
     of SDL_EVENT_WINDOW_RESIZED:
       let window = sdlEvent.window
       p.windowWidth = window.data1.int
