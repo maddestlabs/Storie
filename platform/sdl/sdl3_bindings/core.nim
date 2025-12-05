@@ -1,4 +1,29 @@
 ## SDL3 Core - Initialization, window management, and basic functionality
+
+# === BINDING METADATA ===
+when defined(bindingMetadataGeneration):
+  import ../../binding_metadata
+  
+  const coreBindingMetadata* = BindingMetadata(
+    library: "sdl3",
+    module: "core",
+    features: @["init", "window", "video", "opengl"],
+    functions: @[
+      "SDL_Init", "SDL_Quit",
+      "SDL_CreateWindow", "SDL_DestroyWindow",
+      "SDL_GetWindowSize", "SDL_SetWindowSize",
+      "SDL_GL_SetAttribute", "SDL_GL_CreateContext", "SDL_GL_DeleteContext",
+      "SDL_GL_SwapWindow"
+    ],
+    minimalBuild: true,   # Core is always included
+    estimatedSize: 150_000,  # ~150KB for SDL3 core
+    dependencies: @["types"],
+    description: "SDL3 initialization, window management, and OpenGL context"
+  )
+  
+  static:
+    getRegistry().registerBinding(coreBindingMetadata)
+
 import build_config
 import types
 export types

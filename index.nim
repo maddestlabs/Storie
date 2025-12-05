@@ -1,8 +1,12 @@
 ## Storie Index - Default markdown-based entry point
 ## This demonstrates using the Storie engine with markdown code blocks
 
-import strutils, times, os, parseopt, sequtils
+import strutils, sequtils
 import storie
+
+# Native-only imports (not needed for WASM)
+when not defined(emscripten):
+  import times, os, parseopt
 
 # Emscripten support for dynamic gist loading
 when defined(emscripten):
@@ -78,10 +82,14 @@ var contentInitRun: bool = false  # Track if init blocks have been executed
 
 proc loadMarkdownContent(filePath: string): string =
   ## Load markdown content from a file path
-  if fileExists(filePath):
-    return readFile(filePath)
+  when not defined(emscripten):
+    if fileExists(filePath):
+      return readFile(filePath)
+    else:
+      echo "Warning: ", filePath, " not found"
+      return ""
   else:
-    echo "Warning: ", filePath, " not found"
+    # WASM builds don't use file loading
     return ""
 
 proc loadAndParseMarkdown(markdownPath: string = ""): seq[CodeBlock] =

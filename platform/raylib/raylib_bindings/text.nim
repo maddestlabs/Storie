@@ -1,4 +1,27 @@
 ## Raylib Text - Font loading and text drawing
+
+# === BINDING METADATA ===
+when defined(bindingMetadataGeneration):
+  import ../../binding_metadata
+  
+  const textBindingMetadata* = BindingMetadata(
+    library: "raylib",
+    module: "text",
+    features: @["fonts", "text_rendering", "text_measurement"],
+    functions: @[
+      "GetFontDefault", "LoadFont", "LoadFontEx", "LoadFontFromMemory", "UnloadFont",
+      "DrawFPS", "DrawText", "DrawTextEx", "DrawTextPro",
+      "MeasureText", "MeasureTextEx"
+    ],
+    minimalBuild: true,   # Text is included in minimal (uses default font)
+    estimatedSize: 45_000,  # ~45KB for text rendering
+    dependencies: @["core", "types"],
+    description: "Font loading and text rendering with raylib's built-in default font"
+  )
+  
+  static:
+    getRegistry().registerBinding(textBindingMetadata)
+
 import build_config
 import types
 export types

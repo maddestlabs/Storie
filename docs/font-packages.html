@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Storie - Font Package Selection</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .package-option {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .package-option:hover {
+            border-color: #007bff;
+            background: #f8f9fa;
+        }
+        .package-option h3 {
+            margin-top: 0;
+        }
+        .size {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .recommended {
+            background: #e7f3ff;
+            border-color: #007bff;
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎨 Storie Font Package Selection</h1>
+    
+    <p>Choose which font package to load. Each option has different build sizes and capabilities.</p>
+    
+    <div class="package-option recommended" onclick="loadPackage('minimal')">
+        <h3>⚡ Minimal (Recommended for Demos)</h3>
+        <p class="size">Size: ~500KB WASM + 0KB fonts = 500KB total</p>
+        <p>No Google Fonts. Uses raylib's built-in default font. Perfect for quick prototypes and demos.</p>
+        <p><strong>Best for:</strong> Fast loading, GitHub Gist demos, minimal examples</p>
+    </div>
+    
+    <div class="package-option" onclick="loadPackage('corefonts')">
+        <h3>📝 Core Fonts</h3>
+        <p class="size">Size: ~735KB WASM + 300KB fonts = 1MB total</p>
+        <p>Includes 3 popular Google Fonts: Roboto, Roboto Mono, Inter</p>
+        <p><strong>Best for:</strong> Professional-looking demos with variety</p>
+        <p>Available fonts:</p>
+        <ul>
+            <li><code>Roboto-Regular.ttf</code> - Clean sans-serif</li>
+            <li><code>RobotoMono-Regular.ttf</code> - Monospace for code</li>
+            <li><code>Inter-Regular.ttf</code> - Modern UI font</li>
+        </ul>
+    </div>
+    
+    <div class="package-option" onclick="loadPackage('fullfonts')">
+        <h3>🎨 Full Fonts</h3>
+        <p class="size">Size: ~735KB WASM + 1.5MB fonts = 2.2MB total</p>
+        <p>Includes 10 popular Google Fonts covering various styles</p>
+        <p><strong>Best for:</strong> Complete design flexibility, production apps</p>
+        <p>Available fonts:</p>
+        <ul>
+            <li>Roboto, Roboto Mono, Inter (from core)</li>
+            <li>Open Sans, Lato, Montserrat</li>
+            <li>Source Code Pro, Playfair Display</li>
+            <li>Poppins, Ubuntu</li>
+        </ul>
+    </div>
+    
+    <hr style="margin: 40px 0;">
+    
+    <h2>How to Build</h2>
+    
+    <h3>Option 1: Build Separate Versions</h3>
+    <pre><code># Build all three versions
+./build-web-full.sh              # Minimal (no fonts)
+./build-web-full.sh -f core      # Core fonts
+./build-web-full.sh -f full      # All fonts
+
+# Output files:
+# storie-raylib-full.js/.wasm                    (minimal)
+# storie-raylib-full-corefonts.js/.wasm/.data    (core)
+# storie-raylib-full-fullfonts.js/.wasm/.data    (full)
+</code></pre>
+    
+    <h3>Option 2: URL Parameter Selection</h3>
+    <pre><code># User visits:
+https://yoursite.com/storie.html                  # Loads minimal
+https://yoursite.com/storie.html?fonts=core       # Loads core fonts
+https://yoursite.com/storie.html?fonts=full       # Loads all fonts
+</code></pre>
+    
+    <h3>Usage in Code</h3>
+    <pre><code># In your Nimini code:
+let font = LoadFont("/assets/fonts/Roboto-Regular.ttf")
+DrawTextEx(font, "Hello World!", Vector2(100, 100), 20, 1, WHITE)
+
+# Fallback to default if font not found:
+var font = LoadFont("/assets/fonts/Roboto-Regular.ttf")
+if font.texture.id == 0:  # Font loading failed
+    font = GetFontDefault()  # Use built-in font
+</code></pre>
+    
+    <h2>Download Fonts</h2>
+    <p>To get the font files, run:</p>
+    <pre><code>./build-font-packages.sh</code></pre>
+    <p>This downloads Google Fonts into <code>docs/assets/fonts/core/</code> and <code>docs/assets/fonts/full/</code></p>
+    
+    <script>
+        function loadPackage(packageName) {
+            const urls = {
+                minimal: 'storie-raylib-full.html',
+                corefonts: 'storie-raylib-full.html?fonts=core',
+                fullfonts: 'storie-raylib-full.html?fonts=full'
+            };
+            
+            alert(`Would navigate to: ${urls[packageName]}\n\nIn a real deployment, this would load the ${packageName} package.`);
+            
+            // In production:
+            // window.location.href = urls[packageName];
+        }
+    </script>
+</body>
+</html>

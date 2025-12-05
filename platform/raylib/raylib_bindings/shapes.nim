@@ -1,4 +1,31 @@
 ## Raylib Shapes - 2D shape drawing functions
+
+# === BINDING METADATA ===
+when defined(bindingMetadataGeneration):
+  import ../../binding_metadata
+  
+  const shapesBindingMetadata* = BindingMetadata(
+    library: "raylib",
+    module: "shapes",
+    features: @["2d_shapes", "primitives", "vector_drawing"],
+    functions: @[
+      "DrawPixel", "DrawPixelV",
+      "DrawLine", "DrawLineV", "DrawLineEx",
+      "DrawCircle", "DrawCircleV", "DrawCircleLines",
+      "DrawRectangle", "DrawRectangleV", "DrawRectangleRec", "DrawRectanglePro",
+      "DrawRectangleLines", "DrawRectangleLinesEx",
+      "DrawTriangle", "DrawTriangleLines",
+      "DrawPoly", "DrawPolyLines"
+    ],
+    minimalBuild: true,   # Basic shapes are core functionality
+    estimatedSize: 30_000,  # ~30KB for shape rendering
+    dependencies: @["core", "types"],
+    description: "2D shape drawing primitives (pixels, lines, circles, rectangles, triangles, polygons)"
+  )
+  
+  static:
+    getRegistry().registerBinding(shapesBindingMetadata)
+
 import build_config
 import types
 export types

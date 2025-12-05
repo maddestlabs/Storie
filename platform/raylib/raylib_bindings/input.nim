@@ -1,4 +1,30 @@
 ## Raylib Input - Keyboard, mouse, and gamepad input handling
+
+# === BINDING METADATA ===
+when defined(bindingMetadataGeneration):
+  import ../../binding_metadata
+  
+  const inputBindingMetadata* = BindingMetadata(
+    library: "raylib",
+    module: "input",
+    features: @["keyboard", "mouse", "gamepad", "touch"],
+    functions: @[
+      "IsKeyPressed", "IsKeyDown", "IsKeyReleased", "IsKeyUp",
+      "GetKeyPressed", "GetCharPressed", "SetExitKey",
+      "IsMouseButtonPressed", "IsMouseButtonDown", "IsMouseButtonReleased", "IsMouseButtonUp",
+      "GetMouseX", "GetMouseY", "GetMousePosition", "GetMouseDelta",
+      "SetMousePosition", "SetMouseOffset", "SetMouseScale",
+      "GetMouseWheelMove", "SetMouseCursor"
+    ],
+    minimalBuild: true,   # Input is essential for interaction
+    estimatedSize: 40_000,  # ~40KB for input handling
+    dependencies: @["core", "types"],
+    description: "Keyboard, mouse, gamepad, and touch input handling"
+  )
+  
+  static:
+    getRegistry().registerBinding(inputBindingMetadata)
+
 import build_config
 import types
 export types

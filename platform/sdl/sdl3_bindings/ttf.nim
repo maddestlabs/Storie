@@ -1,4 +1,27 @@
 ## SDL3_ttf - TrueType font rendering
+
+# === BINDING METADATA ===
+when defined(bindingMetadataGeneration):
+  import ../../binding_metadata
+  
+  const ttfBindingMetadata* = BindingMetadata(
+    library: "sdl3",
+    module: "ttf",
+    features: @["fonts", "text_rendering", "truetype", "harfbuzz", "complex_scripts"],
+    functions: @[
+      "TTF_Init", "TTF_Quit",
+      "TTF_OpenFont", "TTF_CloseFont",
+      "TTF_RenderText_Solid", "TTF_RenderText_Blended", "TTF_RenderGlyph_Solid"
+    ],
+    minimalBuild: false,  # TTF not in minimal (requires FreeType, HarfBuzz)
+    estimatedSize: 1_800_000,  # ~1.8MB (includes FreeType, HarfBuzz, PlutoSVG)
+    dependencies: @["core", "render", "types"],
+    description: "TrueType font rendering with FreeType, HarfBuzz text shaping, and PlutoSVG color emoji"
+  )
+  
+  static:
+    getRegistry().registerBinding(ttfBindingMetadata)
+
 import build_config
 import types
 export types

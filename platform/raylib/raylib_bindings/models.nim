@@ -1,4 +1,31 @@
 ## Raylib Models - 3D model loading and drawing
+
+# === BINDING METADATA ===
+when defined(bindingMetadataGeneration):
+  import ../../binding_metadata
+  
+  const modelsBindingMetadata* = BindingMetadata(
+    library: "raylib",
+    module: "models",
+    features: @["3d_rendering", "3d_shapes", "mesh_generation", "model_loading"],
+    functions: @[
+      "DrawLine3D", "DrawPoint3D", "DrawCircle3D", "DrawTriangle3D",
+      "DrawCube", "DrawCubeV", "DrawCubeWires", "DrawCubeWiresV",
+      "DrawSphere", "DrawSphereEx", "DrawSphereWires",
+      "DrawCylinder", "DrawCylinderEx", "DrawCylinderWires", "DrawCylinderWiresEx",
+      "DrawPlane", "DrawGrid",
+      "GenMeshCube", "GenMeshSphere", "GenMeshPlane", "GenMeshCylinder",
+      "LoadModel", "UnloadModel", "DrawModel", "DrawModelEx"
+    ],
+    minimalBuild: false,  # 3D not included in minimal
+    estimatedSize: 250_000,  # ~250KB for 3D rendering
+    dependencies: @["core", "types"],
+    description: "3D model loading, mesh generation, and 3D shape rendering"
+  )
+  
+  static:
+    getRegistry().registerBinding(modelsBindingMetadata)
+
 import build_config
 import types
 export types

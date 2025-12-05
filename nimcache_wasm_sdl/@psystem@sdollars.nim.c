@@ -5,7 +5,6 @@
 #define NIM_INTBITS 32
 
 #include "nimbase.h"
-#include <string.h>
 #undef LANGUAGE_C
 #undef MIPSEB
 #undef MIPSEL
@@ -21,8 +20,6 @@
 #undef unix
 typedef struct NimStrPayload NimStrPayload;
 typedef struct NimStringV2 NimStringV2;
-typedef struct tySequence__sM4lkSb7zS6F7OVMvW9cffQ tySequence__sM4lkSb7zS6F7OVMvW9cffQ;
-typedef struct tySequence__sM4lkSb7zS6F7OVMvW9cffQ_Content tySequence__sM4lkSb7zS6F7OVMvW9cffQ_Content;
 struct NimStrPayload {
 	NI cap;
 	NIM_CHAR data[SEQ_DECL_SIZE];
@@ -31,26 +28,11 @@ struct NimStringV2 {
 	NI len;
 	NimStrPayload* p;
 };
-struct tySequence__sM4lkSb7zS6F7OVMvW9cffQ {
-  NI len; tySequence__sM4lkSb7zS6F7OVMvW9cffQ_Content* p;
-};
-struct tySequence__sM4lkSb7zS6F7OVMvW9cffQ_Content { NI cap; NimStringV2 data[SEQ_DECL_SIZE]; };
 N_LIB_PRIVATE N_NIMCALL(void, addInt__stdZprivateZdigitsutils_u187)(NimStringV2* result_p0, NI64 x_p1);
 static N_INLINE(void, addInt__stdZprivateZdigitsutils_u204)(NimStringV2* result_p0, NI x_p1);
 static N_INLINE(void, addFloat__system_u4721)(NimStringV2* result_p0, NF x_p1);
 N_LIB_PRIVATE N_NIMCALL(void, addFloatRoundtrip__system_u4726)(NimStringV2* result_p0, NF x_p1);
 static N_INLINE(NIM_BOOL*, nimErrorFlag)(void);
-N_LIB_PRIVATE N_NIMCALL(NimStringV2, collectionToString__platformZsdlZsdl95platform_u103)(tySequence__sM4lkSb7zS6F7OVMvW9cffQ x_p0, NimStringV2 prefix_p1, NimStringV2 separator_p2, NimStringV2 suffix_p3);
-N_LIB_PRIVATE N_NIMCALL(void, eqcopy___system_u2642)(NimStringV2* dest_p0, NimStringV2 src_p1);
-static N_INLINE(void, appendString)(NimStringV2* dest_p0, NimStringV2 src_p1);
-static N_INLINE(void, copyMem__system_u1741)(void* dest_p0, void* source_p1, NI size_p2);
-static N_INLINE(void, nimCopyMem)(void* dest_p0, void* source_p1, NI size_p2);
-N_LIB_PRIVATE N_NOINLINE(void, raiseRangeErrorI)(NI64 i_p0, NI64 a_p1, NI64 b_p2);
-N_LIB_PRIVATE N_NOINLINE(void, raiseOverflow)(void);
-N_LIB_PRIVATE N_NIMCALL(void, prepareAdd)(NimStringV2* s_p0, NI addLen_p1);
-N_LIB_PRIVATE N_NIMCALL(void, addQuoted__stdZprivateZoscommon_u119)(NimStringV2* s_p0, NimStringV2 x_p1);
-N_LIB_PRIVATE N_NIMCALL(void, failedAssertImpl__stdZassertions_u234)(NimStringV2 msg_p0);
-N_LIB_PRIVATE N_NIMCALL(void, addInt__stdZprivateZdigitsutils_u184)(NimStringV2* result_p0, NU64 x_p1);
 static const struct {
   NI cap; NIM_CHAR data[0+1];
 } TM__n49a9aYp5BrbXv9a6OCpJYm0g_2 = { 0 | NIM_STRLIT_FLAG, "" };
@@ -58,23 +40,6 @@ static const NimStringV2 TM__n49a9aYp5BrbXv9a6OCpJYm0g_3 = {0, (NimStrPayload*)&
 static const NimStringV2 TM__n49a9aYp5BrbXv9a6OCpJYm0g_4 = {0, (NimStrPayload*)&TM__n49a9aYp5BrbXv9a6OCpJYm0g_2};
 static const NimStringV2 TM__n49a9aYp5BrbXv9a6OCpJYm0g_5 = {0, (NimStrPayload*)&TM__n49a9aYp5BrbXv9a6OCpJYm0g_2};
 static const NimStringV2 TM__n49a9aYp5BrbXv9a6OCpJYm0g_6 = {0, (NimStrPayload*)&TM__n49a9aYp5BrbXv9a6OCpJYm0g_2};
-static const struct {
-  NI cap; NIM_CHAR data[90+1];
-} TM__n49a9aYp5BrbXv9a6OCpJYm0g_8 = { 90 | NIM_STRLIT_FLAG, "iterators.nim(254, 11) `len(a) == L` the length of the seq changed while iterating over it" };
-static const NimStringV2 TM__n49a9aYp5BrbXv9a6OCpJYm0g_9 = {90, (NimStrPayload*)&TM__n49a9aYp5BrbXv9a6OCpJYm0g_8};
-static const struct {
-  NI cap; NIM_CHAR data[2+1];
-} TM__n49a9aYp5BrbXv9a6OCpJYm0g_10 = { 2 | NIM_STRLIT_FLAG, "@[" };
-static const NimStringV2 TM__n49a9aYp5BrbXv9a6OCpJYm0g_11 = {2, (NimStrPayload*)&TM__n49a9aYp5BrbXv9a6OCpJYm0g_10};
-static const struct {
-  NI cap; NIM_CHAR data[2+1];
-} TM__n49a9aYp5BrbXv9a6OCpJYm0g_12 = { 2 | NIM_STRLIT_FLAG, ", " };
-static const NimStringV2 TM__n49a9aYp5BrbXv9a6OCpJYm0g_13 = {2, (NimStrPayload*)&TM__n49a9aYp5BrbXv9a6OCpJYm0g_12};
-static const struct {
-  NI cap; NIM_CHAR data[1+1];
-} TM__n49a9aYp5BrbXv9a6OCpJYm0g_14 = { 1 | NIM_STRLIT_FLAG, "]" };
-static const NimStringV2 TM__n49a9aYp5BrbXv9a6OCpJYm0g_15 = {1, (NimStrPayload*)&TM__n49a9aYp5BrbXv9a6OCpJYm0g_14};
-static const NimStringV2 TM__n49a9aYp5BrbXv9a6OCpJYm0g_16 = {0, (NimStrPayload*)&TM__n49a9aYp5BrbXv9a6OCpJYm0g_2};
 extern NIM_BOOL nimInErrorMode__system_u4234;
 static N_INLINE(void, addInt__stdZprivateZdigitsutils_u204)(NimStringV2* result_p0, NI x_p1) {
 	addInt__stdZprivateZdigitsutils_u187(result_p0, ((NI64) (x_p1)));
@@ -117,94 +82,5 @@ N_LIB_PRIVATE N_NIMCALL(NimStringV2, dollar___systemZdollars_u29)(NI32 xX60gensy
 	NimStringV2 result;
 	result = TM__n49a9aYp5BrbXv9a6OCpJYm0g_6;
 	addInt__stdZprivateZdigitsutils_u204((&result), ((NI) (xX60gensym3__p0)));
-	return result;
-}
-static N_INLINE(void, nimCopyMem)(void* dest_p0, void* source_p1, NI size_p2) {
-	void* T1_;
-	T1_ = (void*)0;
-	T1_ = memcpy(dest_p0, source_p1, ((size_t) (size_p2)));
-}
-static N_INLINE(void, copyMem__system_u1741)(void* dest_p0, void* source_p1, NI size_p2) {
-	nimCopyMem(dest_p0, source_p1, size_p2);
-}
-static N_INLINE(void, appendString)(NimStringV2* dest_p0, NimStringV2 src_p1) {
-{	{
-		NI TM__n49a9aYp5BrbXv9a6OCpJYm0g_7;
-		if (!(((NI)0) < src_p1.len)) goto LA3_;
-		if ((src_p1.len) < ((NI)0) || (src_p1.len) > ((NI)2147483647)){ raiseRangeErrorI(src_p1.len, ((NI)0), ((NI)2147483647)); goto BeforeRet_;
-		}
-		copyMem__system_u1741(((void*) ((&(*(*dest_p0).p).data[(*dest_p0).len]))), ((void*) ((&(*src_p1.p).data[((NI)0)]))), (src_p1.len));
-		if (nimAddInt((*dest_p0).len, src_p1.len, &TM__n49a9aYp5BrbXv9a6OCpJYm0g_7)) { raiseOverflow(); goto BeforeRet_;
-		};
-		(*dest_p0).len = (NI)(TM__n49a9aYp5BrbXv9a6OCpJYm0g_7);
-		(*(*dest_p0).p).data[(*dest_p0).len] = 0;
-	}
-LA3_: ;
-	}BeforeRet_: ;
-}
-N_LIB_PRIVATE N_NIMCALL(NimStringV2, collectionToString__platformZsdlZsdl95platform_u103)(tySequence__sM4lkSb7zS6F7OVMvW9cffQ x_p0, NimStringV2 prefix_p1, NimStringV2 separator_p2, NimStringV2 suffix_p3) {
-	NimStringV2 result;
-	NIM_BOOL firstElement_1;
-NIM_BOOL* nimErr_;
-{nimErr_ = nimErrorFlag();
-	result.len = 0; result.p = NIM_NIL;
-	eqcopy___system_u2642((&result), prefix_p1);
-	firstElement_1 = NIM_TRUE;
-	{
-		NimStringV2* value_1;
-		NI i_1;
-		NI L_1;
-		NI T2_;
-		value_1 = (NimStringV2*)0;
-		i_1 = ((NI)0);
-		T2_ = x_p0.len;
-		L_1 = T2_;
-		{
-			while (1) {
-				if (!(i_1 < L_1)) goto LA4;
-				value_1 = (&x_p0.p->data[i_1]);
-				{
-					if (!firstElement_1) goto LA7_;
-					firstElement_1 = NIM_FALSE;
-				}
-				goto LA5_;
-LA7_: ;
-				{
-					prepareAdd((&result), separator_p2.len + 0);
-appendString((&result), separator_p2);
-				}
-LA5_: ;
-				addQuoted__stdZprivateZoscommon_u119((&result), (*value_1));
-				i_1 += ((NI)1);
-				{
-					NI T12_;
-					T12_ = x_p0.len;
-					if (!!((T12_ == L_1))) goto LA13_;
-					failedAssertImpl__stdZassertions_u234(TM__n49a9aYp5BrbXv9a6OCpJYm0g_9);
-					if (NIM_UNLIKELY(*nimErr_)) goto BeforeRet_;
-				}
-LA13_: ;
-			} LA4: ;
-		}
-	}
-	prepareAdd((&result), suffix_p3.len + 0);
-appendString((&result), suffix_p3);
-	}BeforeRet_: ;
-	return result;
-}
-N_LIB_PRIVATE N_NIMCALL(NimStringV2, dollar___platformZsdlZsdl95platform_u99)(tySequence__sM4lkSb7zS6F7OVMvW9cffQ x_p0) {
-	NimStringV2 result;
-NIM_BOOL* nimErr_;
-{nimErr_ = nimErrorFlag();
-	result.len = 0; result.p = NIM_NIL;
-	result = collectionToString__platformZsdlZsdl95platform_u103(x_p0, TM__n49a9aYp5BrbXv9a6OCpJYm0g_11, TM__n49a9aYp5BrbXv9a6OCpJYm0g_13, TM__n49a9aYp5BrbXv9a6OCpJYm0g_15);
-	if (NIM_UNLIKELY(*nimErr_)) goto BeforeRet_;
-	}BeforeRet_: ;
-	return result;
-}
-N_LIB_PRIVATE N_NIMCALL(NimStringV2, dollar___systemZdollars_u44)(NU8 xX60gensym6__p0) {
-	NimStringV2 result;
-	result = TM__n49a9aYp5BrbXv9a6OCpJYm0g_16;
-	addInt__stdZprivateZdigitsutils_u184((&result), ((NU64) (xX60gensym6__p0)));
 	return result;
 }

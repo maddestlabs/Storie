@@ -1,4 +1,28 @@
 ## SDL3 Audio - Audio playback, recording, and stream management
+
+# === BINDING METADATA ===
+when defined(bindingMetadataGeneration):
+  import ../../binding_metadata
+  
+  const audioBindingMetadata* = BindingMetadata(
+    library: "sdl3",
+    module: "audio",
+    features: @["audio_playback", "audio_recording", "audio_streams"],
+    functions: @[
+      "SDL_OpenAudioDevice", "SDL_CloseAudioDevice",
+      "SDL_CreateAudioStream", "SDL_DestroyAudioStream",
+      "SDL_PutAudioStreamData", "SDL_GetAudioStreamData",
+      "SDL_PauseAudioDevice", "SDL_ResumeAudioDevice"
+    ],
+    minimalBuild: false,  # Audio not in minimal
+    estimatedSize: 180_000,  # ~180KB for audio system
+    dependencies: @["core", "types"],
+    description: "Audio playback, recording, and stream management"
+  )
+  
+  static:
+    getRegistry().registerBinding(audioBindingMetadata)
+
 import build_config
 import types
 export types

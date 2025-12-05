@@ -1,4 +1,27 @@
 ## SDL3 Events - Event handling, keyboard, mouse input
+
+# === BINDING METADATA ===
+when defined(bindingMetadataGeneration):
+  import ../../binding_metadata
+  
+  const eventsBindingMetadata* = BindingMetadata(
+    library: "sdl3",
+    module: "events",
+    features: @["input", "keyboard", "mouse", "events"],
+    functions: @[
+      "SDL_PollEvent", "SDL_WaitEvent",
+      "SDL_GetKeyboardState", "SDL_GetMouseState",
+      "SDL_GetModState"
+    ],
+    minimalBuild: true,   # Events/input are essential
+    estimatedSize: 80_000,  # ~80KB for event handling
+    dependencies: @["core", "types"],
+    description: "Event handling, keyboard and mouse input"
+  )
+  
+  static:
+    getRegistry().registerBinding(eventsBindingMetadata)
+
 import build_config
 import types
 export types

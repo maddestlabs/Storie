@@ -10,8 +10,13 @@ FILE_BASE="storie-sdl"
 
 show_help() {
     cat << EOF
-Storie WASM compiler (SDL3) v$VERSION
+Storie WASM compiler (SDL3 Minimal) v$VERSION
 Compile Storie for web deployment with SDL3 backend
+
+This is the MINIMAL build:
+  - Uses SDL_RenderDebugText (built-in, no TTF)
+  - No font loading required
+  - Smallest SDL3 build (~800KB)
 
 Usage: ./build-web-sdl.sh [OPTIONS]
 
@@ -28,6 +33,8 @@ Examples:
 The compiled files will be placed in the specified output directory as:
   - storie-sdl.js
   - storie-sdl.wasm
+
+For TTF font support, use build-web-sdl-full.sh instead
 
 EOF
 }

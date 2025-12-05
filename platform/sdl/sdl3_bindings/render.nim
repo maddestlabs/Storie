@@ -1,4 +1,31 @@
 ## SDL3 Render - 2D rendering, textures, and drawing primitives
+
+# === BINDING METADATA ===
+when defined(bindingMetadataGeneration):
+  import ../../binding_metadata
+  
+  const renderBindingMetadata* = BindingMetadata(
+    library: "sdl3",
+    module: "render",
+    features: @["2d_rendering", "textures", "primitives"],
+    functions: @[
+      "SDL_CreateRenderer", "SDL_DestroyRenderer",
+      "SDL_SetRenderDrawColor", "SDL_SetRenderViewport",
+      "SDL_RenderClear", "SDL_RenderFillRect", "SDL_RenderLine", "SDL_RenderPoint",
+      "SDL_RenderPresent",
+      "SDL_CreateTextureFromSurface", "SDL_DestroyTexture", "SDL_RenderTexture",
+      "SDL_DestroySurface",
+      "SDL_RenderDebugText"
+    ],
+    minimalBuild: true,   # 2D rendering is core functionality
+    estimatedSize: 100_000,  # ~100KB for rendering
+    dependencies: @["core", "types"],
+    description: "2D rendering, texture management, and drawing primitives"
+  )
+  
+  static:
+    getRegistry().registerBinding(renderBindingMetadata)
+
 import build_config
 import types
 export types
@@ -25,3 +52,6 @@ proc SDL_RenderTexture*(renderer: ptr SDL_Renderer, texture: ptr SDL_Texture, sr
 
 # Surface management
 proc SDL_DestroySurface*(surface: ptr SDL_Surface) {.importc, header: "SDL3/SDL_surface.h".}
+
+# Debug text rendering (no TTF needed, built into SDL3)
+proc SDL_RenderDebugText*(renderer: ptr SDL_Renderer, x, y: cfloat, text: cstring): bool {.importc, header: "SDL3/SDL_render.h".}

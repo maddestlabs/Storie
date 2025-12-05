@@ -1,8 +1,6 @@
 # Storie
 
-Storie is a minimal, hackable engine for creative coding and live sketches. Built with [Nim](https://nim-lang.org/), it lets you write markdown with executable code blocks in various, simplified languages. Compiles to native binaries or WebAssembly. Swap backends (Raylib/SDL3), modify anything, break things. Made for tinkerers who want zero constraints.
-
-Fast prototyping that exports to Nim for native compilation across platforms.
+Storie is a minimal, hackable engine designed for fast prototyping with a clear path to native compilation. Built with [Nim](https://nim-lang.org/), it lets you write markdown with executable code blocks in various, simplified languages via [Nimini](https://github.com/maddestlabs/nimini). Storie uses [raylib](https://www.raylib.com/) by default and compiles to native binaries or WebAssembly. Swap backends (Raylib/SDL3), modify anything, break things. It's made for tinkerers who want zero constraints.
 
 Check it out live: [Demo](https://maddestlabs.github.io/storie/)
 
@@ -13,13 +11,13 @@ The engine is built around GitHub features. No need to actually install Nim, or 
 Core engine features:
 - **Cross-Platform** - Runs natively and in web browsers via WebAssembly
 - **Fast-Prototyping** - Write code on GitHub Gist and see it run live. [Example](https://maddestlabs.github.io/storie?gist=bd236fe257f02e371e04f7d9899be0c2) | [Source Gist](https://gist.github.com/R3V1Z3/bd236fe257f02e371e04f7d9899be0c2)
-- **Built with Nim** - Highliy readable code that compiles fast and produces small binaries/executables
+- **Built with Nim** - Highly readable code that compiles fast and produces small binaries/executables
 
 ## Getting Started
 
 Quick Start:
 - Create a gist using Markdown and Nim code blocks
-- See your gist running live: https://maddestlabs.github.io/Storie?gist=GistID
+- See your gist running live: `https://maddestlabs.github.io/Storie?gist=GistID`
 
 Create your own project:
 - Create a template from Storie and enable GitHub Pages
@@ -36,5 +34,5 @@ You'll get a native compiled binary in just moments, Nim compiles super fast.
 
 ## History
 
-- Successor to [Storiel](https://github.com/maddestlabs/storiel), the Lua-based proof-of-concept.
-- Rebuilt from [Backstorie](https://github.com/maddestlabs/backstorie), a template that extends concepts from Storiel, providing a more robust foundation for further projects.
+- Successor to [Storiel](https://github.com/maddestlabs/storiel), the terminal based proof-of-concept with Lua scripting.
+- Rebuilt from [Backstorie](https://github.com/maddestlabs/backstorie), a terminal focused template providing a more robust foundation for further projects.

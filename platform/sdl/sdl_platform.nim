@@ -128,41 +128,50 @@ method init*(p: SdlPlatform, enable3D: bool = false): bool =
       SDL_Quit()
       return false
   
-  # Initialize SDL_ttf (now available for both native and Emscripten)
-  if not TTF_Init():
-    echo "TTF_Init failed: ", SDL_GetError()
-    if not p.renderer.isNil:
-      SDL_DestroyRenderer(p.renderer)
-    if not p.glContext.isNil:
-      SDL_GL_DestroyContext(p.glContext)
-    SDL_DestroyWindow(p.window)
-    SDL_Quit()
-    return false
-  
-  # Load font - try multiple paths
-  const fontSize = 16.0
-  var fontPaths = @[
-    "docs/assets/AnomalyMono-Powerline.otf",
-    "assets/AnomalyMono-Powerline.otf",
-    "/assets/AnomalyMono-Powerline.otf"  # Absolute path for preloaded WASM assets
-  ]
-  
-  p.font = nil
-  for fontPath in fontPaths:
-    p.font = TTF_OpenFont(fontPath.cstring, fontSize)
-    if not p.font.isNil:
-      echo "Font loaded successfully from ", fontPath
-      break
-  
-  if p.font.isNil:
-    echo "Failed to load font from any path: ", SDL_GetError()
-    echo "Tried paths: ", fontPaths
-    TTF_Quit()
-    if not p.renderer.isNil:
-      SDL_DestroyRenderer(p.renderer)
-    if not p.glContext.isNil:
-      SDL_GL_DestroyContext(p.glContext)
-    SDL_DestroyWindow(p.window)
+  # Initialize SDL_ttf (optional - only if fonts available)
+  when defined(sdl3Full):
+    # Full build - TTF required
+    if not TTF_Init():
+      echo "TTF_Init failed: ", SDL_GetError()
+      if not p.renderer.isNil:
+        SDL_DestroyRenderer(p.renderer)
+      if not p.glContext.isNil:
+        SDL_GL_DestroyContext(p.glContext)
+      SDL_DestroyWindow(p.window)
+      SDL_Quit()
+      return false
+    
+    # Load font - try multiple paths
+    const fontSize = 16.0
+    var fontPaths = @[
+      "/assets/fonts/Roboto-Regular.ttf",  # Google Fonts from full build
+      "/assets/fonts/RobotoMono-Regular.ttf",
+      "docs/assets/AnomalyMono-Powerline.otf",
+      "assets/AnomalyMono-Powerline.otf"
+    ]
+    
+    p.font = nil
+    for fontPath in fontPaths:
+      p.font = TTF_OpenFont(fontPath.cstring, fontSize)
+      if not p.font.isNil:
+        echo "Font loaded successfully from ", fontPath
+        break
+    
+    if p.font.isNil:
+      echo "Failed to load font from any path: ", SDL_GetError()
+      echo "Tried paths: ", fontPaths
+      TTF_Quit()
+      if not p.renderer.isNil:
+        SDL_DestroyRenderer(p.renderer)
+      if not p.glContext.isNil:
+        SDL_GL_DestroyContext(p.glContext)
+      SDL_DestroyWindow(p.window)
+      SDL_Quit()
+      return false
+  else:
+    # Minimal build - no TTF, will use SDL_RenderDebugText
+    echo "Running SDL3 minimal build (no TTF - using debug text)"
+    p.font = nil
     SDL_Quit()
     return false
   
@@ -190,9 +199,11 @@ method shutdown*(p: SdlPlatform) =
       SDL_DestroyTexture(entry.texture)
   p.glyphCache.clear()
   
-  if not p.font.isNil:
-    TTF_CloseFont(p.font)
-  TTF_Quit()
+  when defined(sdl3Full):
+    if not p.font.isNil:
+      TTF_CloseFont(p.font)
+    TTF_Quit()
+  
   if not p.renderer.isNil:
     SDL_DestroyRenderer(p.renderer)
   if not p.glContext.isNil:
@@ -205,25 +216,30 @@ proc loadFont*(p: SdlPlatform, path: string, size: float = 16.0): bool =
   ## Load a font at runtime from a file path or URL
   ## For WASM: Font must be accessible via filesystem (preloaded or fetched)
   ## Returns true if successful
+  ## Note: Only available in full builds (sdl3Full)
   
-  # Close existing font if any
-  if not p.font.isNil:
-    TTF_CloseFont(p.font)
+  when defined(sdl3Full):
+    # Close existing font if any
+    if not p.font.isNil:
+      TTF_CloseFont(p.font)
     # Clear glyph cache when font changes
     for entry in p.glyphCache.values:
       if not entry.texture.isNil:
         SDL_DestroyTexture(entry.texture)
     p.glyphCache.clear()
-  
-  # Try to load the new font
-  p.font = TTF_OpenFont(path.cstring, size)
-  
-  if p.font.isNil:
-    echo "Failed to load font from ", path, ": ", SDL_GetError()
+    
+    # Try to load the new font
+    p.font = TTF_OpenFont(path.cstring, size)
+    
+    if p.font.isNil:
+      echo "Failed to load font from ", path, ": ", SDL_GetError()
+      return false
+    
+    echo "Font loaded successfully from ", path
+    return true
+  else:
+    echo "loadFont() only available in full builds (compile with -d:sdl3Full)"
     return false
-  
-  echo "Font loaded successfully from ", path
-  return true
 
 # ================================================================
 # PLATFORM QUERY
@@ -444,46 +460,51 @@ method display*(p: SdlPlatform, renderBuffer: RenderBuffer) =
         cmd.lineX2.float, cmd.lineY2.float)
     
     of DrawText:
-      # Render text using TTF if font is available
-      if not p.font.isNil:
-        let c = cmd.textColor
-        let cacheKey = cmd.textContent & "_" & $c.r & "_" & $c.g & "_" & $c.b & "_" & $cmd.textSize
-        
-        var texture: ptr SDL_Texture
-        var textW, textH: int
-        
-        if p.glyphCache.hasKey(cacheKey):
-          let entry = p.glyphCache[cacheKey]
-          texture = entry.texture
-          textW = entry.width
-          textH = entry.height
-        else:
-          # Render text to texture with blended (antialiased) rendering for better quality
-          let sdlColor = SDL_Color(r: c.r, g: c.g, b: c.b, a: c.a)
-          let surface = TTF_RenderText_Blended(p.font, cmd.textContent.cstring, 
-                                               cmd.textContent.len.csize_t, sdlColor)
+      when defined(sdl3Full):
+        # Full build - use TTF rendering
+        if not p.font.isNil:
+          let c = cmd.textColor
+          let cacheKey = cmd.textContent & "_" & $c.r & "_" & $c.g & "_" & $c.b & "_" & $cmd.textSize
           
-          if not surface.isNil:
-            textW = surface.w
-            textH = surface.h
-            texture = SDL_CreateTextureFromSurface(p.renderer, surface)
-            SDL_DestroySurface(surface)
+          var texture: ptr SDL_Texture
+          var textW, textH: int
+          
+          if p.glyphCache.hasKey(cacheKey):
+            let entry = p.glyphCache[cacheKey]
+            texture = entry.texture
+            textW = entry.width
+            textH = entry.height
+          else:
+            # Render text to texture with blended (antialiased) rendering for better quality
+            let sdlColor = SDL_Color(r: c.r, g: c.g, b: c.b, a: c.a)
+            let surface = TTF_RenderText_Blended(p.font, cmd.textContent.cstring, 
+                                                 cmd.textContent.len.csize_t, sdlColor)
             
-            if not texture.isNil:
-              p.glyphCache[cacheKey] = GlyphCacheEntry(
-                texture: texture,
-                width: textW,
-                height: textH
-              )
-        
-        if not texture.isNil:
-          var dstRect = SDL_FRect(
-            x: cmd.textX.float,
-            y: cmd.textY.float,
-            w: textW.float,
-            h: textH.float
-          )
-          discard SDL_RenderTexture(p.renderer, texture, nil, addr dstRect)
+            if not surface.isNil:
+              textW = surface.w
+              textH = surface.h
+              texture = SDL_CreateTextureFromSurface(p.renderer, surface)
+              SDL_DestroySurface(surface)
+              
+              if not texture.isNil:
+                p.glyphCache[cacheKey] = GlyphCacheEntry(
+                  texture: texture,
+                  width: textW,
+                  height: textH
+                )
+          
+          if not texture.isNil:
+            var dstRect = SDL_FRect(
+              x: cmd.textX.float,
+              y: cmd.textY.float,
+              w: textW.float,
+              h: textH.float
+            )
+            discard SDL_RenderTexture(p.renderer, texture, nil, addr dstRect)
+      else:
+        # Minimal build - use SDL_RenderDebugText (built-in, no TTF needed)
+        discard SDL_RenderDebugText(p.renderer, cmd.textX.float, cmd.textY.float, 
+                                     cmd.textContent.cstring)
     
     of DrawPixel:
       let c = cmd.pixelColor

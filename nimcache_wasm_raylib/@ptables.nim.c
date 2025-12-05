@@ -250,11 +250,11 @@ N_LIB_PRIVATE N_NIMCALL(void, eqsink___srcZniminiZruntime_u94)(tyObject_Valuecol
 static N_INLINE(NIM_BOOL, mustRehash__srcZniminiZruntime_u1743)(tyObject_Table__6paSxwYje8mPhxlM9atNHig t_p0);
 N_LIB_PRIVATE N_NIMCALL(void, failedAssertImpl__stdZassertions_u234)(NimStringV2 msg_p0);
 N_LIB_PRIVATE N_NIMCALL(void, enlarge__srcZniminiZruntime_u1886)(tyObject_Table__6paSxwYje8mPhxlM9atNHig* t_p0);
-N_LIB_PRIVATE N_NIMCALL(void, rawInsert__srcZniminiZruntime_u2170)(tyObject_Table__6paSxwYje8mPhxlM9atNHig* t_p0, tySequence__3z1571A2UZB0YD9c5AVJQig* data_p1, NimStringV2 key_p2, tyObject_ValuecolonObjectType___RcYJRyWduJExIF9chvHZw9aA* val_p3, NI hc_p4, NI h_p5);
+N_LIB_PRIVATE N_NIMCALL(void, rawInsert__srcZniminiZruntime_u2174)(tyObject_Table__6paSxwYje8mPhxlM9atNHig* t_p0, tySequence__3z1571A2UZB0YD9c5AVJQig* data_p1, NimStringV2 key_p2, tyObject_ValuecolonObjectType___RcYJRyWduJExIF9chvHZw9aA* val_p3, NI hc_p4, NI h_p5);
 N_LIB_PRIVATE N_NIMCALL(void, eqcopy___system_u2642)(NimStringV2* dest_p0, NimStringV2 src_p1);
 N_LIB_PRIVATE N_NIMCALL(void, eqwasMoved___system_u2639)(NimStringV2* dest_p0);
 N_LIB_PRIVATE N_NIMCALL(void, eqwasMoved___srcZniminiZruntime_u80)(tyObject_ValuecolonObjectType___RcYJRyWduJExIF9chvHZw9aA** dest_p0);
-static N_INLINE(NI, rawGetKnownHC__srcZniminiZruntime_u2327)(tyObject_Table__6paSxwYje8mPhxlM9atNHig t_p0, NimStringV2 key_p1, NI hc_p2);
+static N_INLINE(NI, rawGetKnownHC__srcZniminiZruntime_u2331)(tyObject_Table__6paSxwYje8mPhxlM9atNHig t_p0, NimStringV2 key_p1, NI hc_p2);
 static N_INLINE(void, nimMarkCyclic)(void* p_p0);
 N_LIB_PRIVATE N_NIMCALL(NIM_BOOL, hasKey__srcZniminiZruntime_u1123)(tyObject_Table__6paSxwYje8mPhxlM9atNHig t_p0, NimStringV2 key_p1);
 N_LIB_PRIVATE N_NOINLINE(void, raiseKeyError__srcZniminiZruntime_u1449)(NimStringV2 key_p0);
@@ -616,7 +616,7 @@ LA8_: ;
 	}BeforeRet_: ;
 	return result;
 }
-N_LIB_PRIVATE N_NIMCALL(void, rawInsert__srcZniminiZruntime_u2170)(tyObject_Table__6paSxwYje8mPhxlM9atNHig* t_p0, tySequence__3z1571A2UZB0YD9c5AVJQig* data_p1, NimStringV2 key_p2, tyObject_ValuecolonObjectType___RcYJRyWduJExIF9chvHZw9aA* val_p3, NI hc_p4, NI h_p5) {
+N_LIB_PRIVATE N_NIMCALL(void, rawInsert__srcZniminiZruntime_u2174)(tyObject_Table__6paSxwYje8mPhxlM9atNHig* t_p0, tySequence__3z1571A2UZB0YD9c5AVJQig* data_p1, NimStringV2 key_p2, tyObject_ValuecolonObjectType___RcYJRyWduJExIF9chvHZw9aA* val_p3, NI hc_p4, NI h_p5) {
 NIM_BOOL* nimErr_;
 {nimErr_ = nimErrorFlag();
 	if (h_p5 < 0 || h_p5 >= (*data_p1).len){ raiseIndexError2(h_p5,(*data_p1).len-1); goto BeforeRet_;
@@ -708,7 +708,7 @@ NIM_BOOL* nimErr_;
 					T18_ = NIM_NIL;
 					T18_ = n_1.p->data[i_1].Field2;
 					eqwasMoved___srcZniminiZruntime_u80((&n_1.p->data[i_1].Field2));
-					rawInsert__srcZniminiZruntime_u2170(T17_, (&(*t_p0).data), colontmpD_, T18_, eh_1, j_1);
+					rawInsert__srcZniminiZruntime_u2174(T17_, (&(*t_p0).data), colontmpD_, T18_, eh_1, j_1);
 					if (NIM_UNLIKELY(*nimErr_)) goto BeforeRet_;
 					if (colontmpD_.p && !(colontmpD_.p->cap & NIM_STRLIT_FLAG)) {
  dealloc(colontmpD_.p);
@@ -725,7 +725,7 @@ LA10_: ;
 	if (NIM_UNLIKELY(*nimErr_)) goto BeforeRet_;
 	}BeforeRet_: ;
 }
-static N_INLINE(NI, rawGetKnownHC__srcZniminiZruntime_u2327)(tyObject_Table__6paSxwYje8mPhxlM9atNHig t_p0, NimStringV2 key_p1, NI hc_p2) {
+static N_INLINE(NI, rawGetKnownHC__srcZniminiZruntime_u2331)(tyObject_Table__6paSxwYje8mPhxlM9atNHig t_p0, NimStringV2 key_p1, NI hc_p2) {
 	NI result;
 	NI h_1;
 	NI T6_;
@@ -838,7 +838,7 @@ LA14_: ;
 			if (!T18_) goto LA19_;
 			enlarge__srcZniminiZruntime_u1886(t_p0);
 			if (NIM_UNLIKELY(*nimErr_)) goto BeforeRet_;
-			index_1 = rawGetKnownHC__srcZniminiZruntime_u2327((*t_p0), key_p1, hc_1);
+			index_1 = rawGetKnownHC__srcZniminiZruntime_u2331((*t_p0), key_p1, hc_1);
 			if (NIM_UNLIKELY(*nimErr_)) goto BeforeRet_;
 		}
 LA19_: ;
@@ -849,7 +849,7 @@ LA19_: ;
 		T21_ = t_p0;
 		blitTmp_1 = val_p2;
 		nimMarkCyclic(val_p2);
-		rawInsert__srcZniminiZruntime_u2170(T21_, (&(*t_p0).data), key_p1, blitTmp_1, hc_1, index_1);
+		rawInsert__srcZniminiZruntime_u2174(T21_, (&(*t_p0).data), key_p1, blitTmp_1, hc_1, index_1);
 		if (NIM_UNLIKELY(*nimErr_)) goto BeforeRet_;
 		if (nimAddInt((*t_p0).counter, ((NI)1), &TM__4SoG2KRQy3oMm9aUzSLtGrA_14)) { raiseOverflow(); goto BeforeRet_;
 		};

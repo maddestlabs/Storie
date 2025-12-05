@@ -1,4 +1,34 @@
 ## Raylib Core - Window management and basic functionality
+
+# === BINDING METADATA ===
+when defined(bindingMetadataGeneration):
+  import ../../binding_metadata
+  
+  const coreBindingMetadata* = BindingMetadata(
+    library: "raylib",
+    module: "core",
+    features: @["window", "timing", "drawing", "3d_mode", "screenshot"],
+    functions: @[
+      "InitWindow", "CloseWindow", "WindowShouldClose", "IsWindowReady",
+      "IsWindowFullscreen", "IsWindowHidden", "IsWindowMinimized", "IsWindowMaximized",
+      "IsWindowFocused", "IsWindowResized", "SetWindowState", "ClearWindowState",
+      "ToggleFullscreen", "MaximizeWindow", "MinimizeWindow", "RestoreWindow",
+      "SetWindowTitle", "SetWindowPosition", "SetWindowSize",
+      "GetScreenWidth", "GetScreenHeight", "GetRenderWidth", "GetRenderHeight",
+      "SetTargetFPS", "GetFPS", "GetFrameTime", "GetTime",
+      "BeginDrawing", "EndDrawing", "ClearBackground",
+      "BeginMode3D", "EndMode3D",
+      "TakeScreenshot", "SetConfigFlags", "TraceLog"
+    ],
+    minimalBuild: true,   # Core is always included
+    estimatedSize: 120_000,  # ~120KB for core functionality
+    dependencies: @["types"],
+    description: "Window management, timing, drawing setup, and core raylib functions"
+  )
+  
+  static:
+    getRegistry().registerBinding(coreBindingMetadata)
+
 import build_config
 import types
 export types
