@@ -1,0 +1,12 @@
+/workspaces/Storie/build-win/vendor/SDL3-build/CMakeFiles/SDL3-static.dir
+/workspaces/Storie/build-win/vendor/SDL3-build/CMakeFiles/SDL3_test.dir
+/workspaces/Storie/build-win/vendor/SDL3-build/CMakeFiles/SDL_uclibc.dir
+/workspaces/Storie/build-win/vendor/SDL3-build/CMakeFiles/uninstall.dir
+/workspaces/Storie/build-win/vendor/SDL3-build/CMakeFiles/package.dir
+/workspaces/Storie/build-win/vendor/SDL3-build/CMakeFiles/package_source.dir
+/workspaces/Storie/build-win/vendor/SDL3-build/CMakeFiles/edit_cache.dir
+/workspaces/Storie/build-win/vendor/SDL3-build/CMakeFiles/rebuild_cache.dir
+/workspaces/Storie/build-win/vendor/SDL3-build/CMakeFiles/list_install_components.dir
+/workspaces/Storie/build-win/vendor/SDL3-build/CMakeFiles/install.dir
+/workspaces/Storie/build-win/vendor/SDL3-build/CMakeFiles/install/local.dir
+/workspaces/Storie/build-win/vendor/SDL3-build/CMakeFiles/install/strip.dir

@@ -1,5 +1,6 @@
 ## Storie - Creative coding engine library
 ## Default backend: Raylib (use -d:sdl3 for SDL3 backend)
+## SDL3 can use OpenGL (default) or SDL_GPU with -d:sdlgpu
 ##
 ## This is the core engine library. Import this to build custom applications.
 ## For the default markdown-based experience, see index.nim
@@ -15,8 +16,16 @@ export platform_interface, pixel_types, render3d_interface, storie_core, nimini
 # Backend selection: raylib by default, SDL3 with -d:sdl3
 when defined(sdl3):
   import platform/sdl/sdl_platform
-  import platform/sdl/sdl_render3d
-  export sdl_platform, sdl_render3d
+  when defined(sdlgpu):
+    # Use SDL_GPU for modern graphics (Vulkan/D3D12/Metal)
+    import platform/sdl/sdl_gpu_render3d
+    export sdl_platform, sdl_gpu_render3d
+    static: echo "[Build] Using SDL3 + SDL_GPU backend (Vulkan/D3D12/Metal)"
+  else:
+    # Use OpenGL for 3D rendering (default)
+    import platform/sdl/sdl_render3d
+    export sdl_platform, sdl_render3d
+    static: echo "[Build] Using SDL3 + OpenGL backend"
 else:
   import platform/raylib/raylib_platform
   import platform/raylib/raylib_render3d
@@ -108,7 +117,10 @@ var gInputState: InputState
 # 3D rendering globals
 var g3DEnabled: bool = false
 when defined(sdl3):
-  var gRenderer3D: SdlRenderer3D
+  when defined(sdlgpu):
+    var gRenderer3D: SdlGpuRenderer3D
+  else:
+    var gRenderer3D: SdlRenderer3D
 else:
   var gRenderer3D: RaylibRenderer3D
 var gCamera: Camera3D
@@ -946,7 +958,12 @@ proc initStorie*(
     g3DEnabled = true
     gCamera = newCamera3D(vec3(0, 0, 5), vec3(0, 0, 0), 60.0)
     when defined(sdl3):
-      gRenderer3D = newSdlRenderer3D()
+      when defined(sdlgpu):
+        # SDL_GPU renderer needs window pointer
+        # TODO: Get window from platform
+        gRenderer3D = newSdlGpuRenderer3D(nil)
+      else:
+        gRenderer3D = newSdlRenderer3D()
     else:
       gRenderer3D = newRaylibRenderer3D()
     if not gRenderer3D.init3D():

@@ -1,0 +1,34 @@
+CMakeFiles/SDL3-static.dir/src/gpu/vulkan/SDL_gpu_vulkan.c.obj: \
+ /workspaces/Storie/vendor/SDL3-src/src/gpu/vulkan/SDL_gpu_vulkan.c \
+ /workspaces/Storie/vendor/SDL3-src/src/SDL_internal.h \
+ /workspaces/Storie/vendor/SDL3-src/src/gpu/vulkan/../../video/khronos/vulkan/vulkan.h \
+ /workspaces/Storie/vendor/SDL3-src/src/gpu/vulkan/../../video/khronos/vulkan/vk_platform.h \
+ /usr/lib/gcc/x86_64-w64-mingw32/13-win32/include/stddef.h \
+ /usr/share/mingw-w64/include/stddef.h \
+ /usr/share/mingw-w64/include/crtdefs.h \
+ /usr/lib/gcc/x86_64-w64-mingw32/13-win32/include/stdint.h \
+ /workspaces/Storie/vendor/SDL3-src/src/gpu/vulkan/../../video/khronos/vulkan/vulkan_core.h \
+ /workspaces/Storie/vendor/SDL3-src/src/gpu/vulkan/../../video/khronos/vulkan/../vk_video/vulkan_video_codec_h264std.h \
+ /workspaces/Storie/vendor/SDL3-src/src/gpu/vulkan/../../video/khronos/vulkan/../vk_video/vulkan_video_codecs_common.h \
+ /workspaces/Storie/vendor/SDL3-src/src/gpu/vulkan/../../video/khronos/vulkan/../vk_video/vulkan_video_codec_h264std_encode.h \
+ /workspaces/Storie/vendor/SDL3-src/src/gpu/vulkan/../../video/khronos/vulkan/../vk_video/vulkan_video_codec_h264std.h \
+ /workspaces/Storie/vendor/SDL3-src/src/gpu/vulkan/../../video/khronos/vulkan/../vk_video/vulkan_video_codec_h265std.h \
+ /workspaces/Storie/vendor/SDL3-src/src/gpu/vulkan/../../video/khronos/vulkan/../vk_video/vulkan_video_codec_h265std_encode.h \
+ /workspaces/Storie/vendor/SDL3-src/src/gpu/vulkan/../../video/khronos/vulkan/../vk_video/vulkan_video_codec_h265std.h \
+ /workspaces/Storie/vendor/SDL3-src/src/gpu/vulkan/../../video/khronos/vulkan/../vk_video/vulkan_video_codec_h264std_decode.h \
+ /workspaces/Storie/vendor/SDL3-src/src/gpu/vulkan/../../video/khronos/vulkan/../vk_video/vulkan_video_codec_h265std_decode.h \
+ /workspaces/Storie/vendor/SDL3-src/src/gpu/vulkan/../../video/khronos/vulkan/../vk_video/vulkan_video_codec_av1std.h \
+ /workspaces/Storie/vendor/SDL3-src/src/gpu/vulkan/../../video/khronos/vulkan/../vk_video/vulkan_video_codec_av1std_decode.h \
+ /workspaces/Storie/vendor/SDL3-src/src/gpu/vulkan/../../video/khronos/vulkan/../vk_video/vulkan_video_codec_av1std.h \
+ /workspaces/Storie/vendor/SDL3-src/src/gpu/vulkan/../../video/khronos/vulkan/vulkan_beta.h \
+ /workspaces/Storie/vendor/SDL3-src/include/SDL3/SDL_vulkan.h \
+ /workspaces/Storie/vendor/SDL3-src/include/SDL3/SDL_stdinc.h \
+ /workspaces/Storie/vendor/SDL3-src/include/SDL3/SDL_error.h \
+ /workspaces/Storie/vendor/SDL3-src/include/SDL3/SDL_video.h \
+ /workspaces/Storie/vendor/SDL3-src/include/SDL3/SDL_begin_code.h \
+ /workspaces/Storie/vendor/SDL3-src/include/SDL3/SDL_close_code.h \
+ /workspaces/Storie/vendor/SDL3-src/src/gpu/vulkan/../SDL_sysgpu.h \
+ /workspaces/Storie/vendor/SDL3-src/src/gpu/vulkan/../../video/SDL_sysvideo.h \
+ /workspaces/Storie/vendor/SDL3-src/src/gpu/vulkan/../../video/SDL_surface_c.h \
+ /workspaces/Storie/vendor/SDL3-src/src/gpu/vulkan/../../video/SDL_blit.h \
+ /workspaces/Storie/vendor/SDL3-src/src/gpu/vulkan/SDL_gpu_vulkan_vkfuncs.h

@@ -1,0 +1,20 @@
+CMakeFiles/SDL3-static.dir/src/render/gpu/SDL_shaders_gpu.c.obj: \
+ /workspaces/Storie/vendor/SDL3-src/src/render/gpu/SDL_shaders_gpu.c \
+ /workspaces/Storie/vendor/SDL3-src/src/SDL_internal.h \
+ /workspaces/Storie/vendor/SDL3-src/src/render/gpu/SDL_shaders_gpu.h \
+ /workspaces/Storie/vendor/SDL3-src/src/render/gpu/shaders/spir-v.h \
+ /workspaces/Storie/vendor/SDL3-src/src/render/gpu/shaders/color.frag.spv.h \
+ /workspaces/Storie/vendor/SDL3-src/src/render/gpu/shaders/linepoint.vert.spv.h \
+ /workspaces/Storie/vendor/SDL3-src/src/render/gpu/shaders/texture_advanced.frag.spv.h \
+ /workspaces/Storie/vendor/SDL3-src/src/render/gpu/shaders/texture_rgb.frag.spv.h \
+ /workspaces/Storie/vendor/SDL3-src/src/render/gpu/shaders/texture_rgba.frag.spv.h \
+ /workspaces/Storie/vendor/SDL3-src/src/render/gpu/shaders/tri_color.vert.spv.h \
+ /workspaces/Storie/vendor/SDL3-src/src/render/gpu/shaders/tri_texture.vert.spv.h \
+ /workspaces/Storie/vendor/SDL3-src/src/render/gpu/shaders/dxil.h \
+ /workspaces/Storie/vendor/SDL3-src/src/render/gpu/shaders/color.frag.dxil.h \
+ /workspaces/Storie/vendor/SDL3-src/src/render/gpu/shaders/linepoint.vert.dxil.h \
+ /workspaces/Storie/vendor/SDL3-src/src/render/gpu/shaders/texture_advanced.frag.dxil.h \
+ /workspaces/Storie/vendor/SDL3-src/src/render/gpu/shaders/texture_rgb.frag.dxil.h \
+ /workspaces/Storie/vendor/SDL3-src/src/render/gpu/shaders/texture_rgba.frag.dxil.h \
+ /workspaces/Storie/vendor/SDL3-src/src/render/gpu/shaders/tri_color.vert.dxil.h \
+ /workspaces/Storie/vendor/SDL3-src/src/render/gpu/shaders/tri_texture.vert.dxil.h

@@ -1,0 +1,25 @@
+CMakeFiles/SDL3-static.dir/src/render/opengles2/SDL_render_gles2.c.obj: \
+ /workspaces/Storie/vendor/SDL3-src/src/render/opengles2/SDL_render_gles2.c \
+ /workspaces/Storie/vendor/SDL3-src/src/SDL_internal.h \
+ /workspaces/Storie/vendor/SDL3-src/src/render/opengles2/../../video/SDL_sysvideo.h \
+ /workspaces/Storie/vendor/SDL3-src/include/SDL3/SDL_vulkan.h \
+ /workspaces/Storie/vendor/SDL3-src/include/SDL3/SDL_stdinc.h \
+ /workspaces/Storie/vendor/SDL3-src/include/SDL3/SDL_error.h \
+ /workspaces/Storie/vendor/SDL3-src/include/SDL3/SDL_video.h \
+ /workspaces/Storie/vendor/SDL3-src/include/SDL3/SDL_begin_code.h \
+ /workspaces/Storie/vendor/SDL3-src/include/SDL3/SDL_close_code.h \
+ /workspaces/Storie/vendor/SDL3-src/src/render/opengles2/../../video/SDL_surface_c.h \
+ /workspaces/Storie/vendor/SDL3-src/src/render/opengles2/../../video/SDL_blit.h \
+ /workspaces/Storie/vendor/SDL3-src/include/SDL3/SDL_opengles2.h \
+ /workspaces/Storie/vendor/SDL3-src/include/SDL3/SDL_platform_defines.h \
+ /workspaces/Storie/vendor/SDL3-src/src/video/khronos/GLES2/gl2platform.h \
+ /usr/share/mingw-w64/include/KHR/khrplatform.h \
+ /usr/lib/gcc/x86_64-w64-mingw32/13-win32/include/stdint.h \
+ /workspaces/Storie/vendor/SDL3-src/src/video/khronos/GLES2/gl2.h \
+ /workspaces/Storie/vendor/SDL3-src/src/video/khronos/GLES2/gl2ext.h \
+ /workspaces/Storie/vendor/SDL3-src/src/render/opengles2/../SDL_sysrender.h \
+ /workspaces/Storie/vendor/SDL3-src/src/render/opengles2/../../video/SDL_surface_c.h \
+ /workspaces/Storie/vendor/SDL3-src/src/render/opengles2/../SDL_yuv_sw_c.h \
+ /workspaces/Storie/vendor/SDL3-src/src/render/opengles2/../../video/SDL_pixels_c.h \
+ /workspaces/Storie/vendor/SDL3-src/src/render/opengles2/SDL_shaders_gles2.h \
+ /workspaces/Storie/vendor/SDL3-src/src/render/opengles2/SDL_gles2funcs.h

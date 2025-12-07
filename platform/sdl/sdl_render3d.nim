@@ -2,7 +2,10 @@
 ## Provides OpenGL-based 3D rendering for SDL3 backend
 
 import ../render3d_interface
-import sdl3_bindings/opengl
+
+# Only import OpenGL when not using SDL_GPU
+when not defined(sdlgpu):
+  import sdl3_bindings/opengl
 
 export render3d_interface
 

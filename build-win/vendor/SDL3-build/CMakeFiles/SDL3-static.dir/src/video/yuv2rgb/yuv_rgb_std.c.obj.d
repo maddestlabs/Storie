@@ -1,0 +1,10 @@
+CMakeFiles/SDL3-static.dir/src/video/yuv2rgb/yuv_rgb_std.c.obj: \
+ /workspaces/Storie/vendor/SDL3-src/src/video/yuv2rgb/yuv_rgb_std.c \
+ /workspaces/Storie/vendor/SDL3-src/src/SDL_internal.h \
+ /workspaces/Storie/vendor/SDL3-src/src/video/yuv2rgb/yuv_rgb_internal.h \
+ /workspaces/Storie/vendor/SDL3-src/src/video/yuv2rgb/yuv_rgb.h \
+ /workspaces/Storie/vendor/SDL3-src/src/video/yuv2rgb/yuv_rgb_std.h \
+ /workspaces/Storie/vendor/SDL3-src/src/video/yuv2rgb/yuv_rgb_common.h \
+ /workspaces/Storie/vendor/SDL3-src/src/video/yuv2rgb/yuv_rgb_sse.h \
+ /workspaces/Storie/vendor/SDL3-src/src/video/yuv2rgb/yuv_rgb_lsx.h \
+ /workspaces/Storie/vendor/SDL3-src/src/video/yuv2rgb/yuv_rgb_std_func.h

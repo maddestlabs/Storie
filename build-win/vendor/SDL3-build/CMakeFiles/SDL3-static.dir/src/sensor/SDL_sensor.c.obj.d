@@ -1,0 +1,26 @@
+CMakeFiles/SDL3-static.dir/src/sensor/SDL_sensor.c.obj: \
+ /workspaces/Storie/vendor/SDL3-src/src/sensor/SDL_sensor.c \
+ /workspaces/Storie/vendor/SDL3-src/src/SDL_internal.h \
+ /workspaces/Storie/vendor/SDL3-src/src/sensor/SDL_syssensor.h \
+ /workspaces/Storie/vendor/SDL3-src/src/sensor/SDL_sensor_c.h \
+ /workspaces/Storie/vendor/SDL3-src/src/sensor/../events/SDL_events_c.h \
+ /workspaces/Storie/vendor/SDL3-src/src/sensor/../events/../video/SDL_sysvideo.h \
+ /workspaces/Storie/vendor/SDL3-src/include/SDL3/SDL_vulkan.h \
+ /workspaces/Storie/vendor/SDL3-src/include/SDL3/SDL_stdinc.h \
+ /workspaces/Storie/vendor/SDL3-src/include/SDL3/SDL_error.h \
+ /workspaces/Storie/vendor/SDL3-src/include/SDL3/SDL_video.h \
+ /workspaces/Storie/vendor/SDL3-src/include/SDL3/SDL_begin_code.h \
+ /workspaces/Storie/vendor/SDL3-src/include/SDL3/SDL_close_code.h \
+ /workspaces/Storie/vendor/SDL3-src/src/sensor/../events/../video/SDL_surface_c.h \
+ /workspaces/Storie/vendor/SDL3-src/src/sensor/../events/../video/SDL_blit.h \
+ /workspaces/Storie/vendor/SDL3-src/src/sensor/../events/SDL_clipboardevents_c.h \
+ /workspaces/Storie/vendor/SDL3-src/src/sensor/../events/SDL_displayevents_c.h \
+ /workspaces/Storie/vendor/SDL3-src/src/sensor/../events/SDL_dropevents_c.h \
+ /workspaces/Storie/vendor/SDL3-src/src/sensor/../events/SDL_keyboard_c.h \
+ /workspaces/Storie/vendor/SDL3-src/src/sensor/../events/SDL_keymap_c.h \
+ /workspaces/Storie/vendor/SDL3-src/src/sensor/../events/SDL_mouse_c.h \
+ /workspaces/Storie/vendor/SDL3-src/src/sensor/../events/SDL_touch_c.h \
+ /workspaces/Storie/vendor/SDL3-src/src/sensor/../events/SDL_pen_c.h \
+ /workspaces/Storie/vendor/SDL3-src/src/sensor/../events/../SDL_internal.h \
+ /workspaces/Storie/vendor/SDL3-src/src/sensor/../events/SDL_windowevents_c.h \
+ /workspaces/Storie/vendor/SDL3-src/src/sensor/../joystick/SDL_gamepad_c.h

@@ -5,6 +5,9 @@ nimcache_wasm/
 *.out
 storie
 
+# Project name override (optional)
+.project-name
+
 # WASM build artifacts (keep only source files in web/)
 web/storie.wasm
 web/storie.wasm.js
