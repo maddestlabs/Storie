@@ -134,7 +134,7 @@ NIM_OPTS="c
   --threads:off
   --exceptions:goto
   $RELEASE_MODE
-  --nimcache:nimcache_wasm_raylib
+  --nimcache:nimcache/wasm_raylib
   -o:$OUTPUT_DIR/${FILE_BASE}.js
   index.nim"
 

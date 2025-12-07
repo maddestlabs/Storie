@@ -141,7 +141,7 @@ NIM_OPTS="c
   --threads:off
   --exceptions:goto
   $RELEASE_MODE
-  --nimcache:nimcache_wasm_sdl_full
+  --nimcache:nimcache/wasm_sdl_full
   -o:$OUTPUT_DIR/${FILE_BASE}.js
   index.nim"
 
