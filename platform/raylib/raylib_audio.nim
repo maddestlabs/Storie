@@ -85,7 +85,7 @@ method createStream*(sys: RaylibAudioSystem, spec: AudioSpec): AudioStream =
     cuint(spec.channels)
   )
   
-  if not IsAudioStreamReady(rlStream):
+  if not IsAudioStreamValid(rlStream):
     return nil
   
   var stream = RaylibAudioStream()

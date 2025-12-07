@@ -14,8 +14,11 @@ var volume = 0.5
 var phase = 0.0
 
 # Initialize audio
-initAudio(sampleRate, 2, 4096)
-print("Audio initialized at " & $sampleRate & " Hz")
+if initAudio(sampleRate, 2, 4096):
+  print("Audio initialized at " & $sampleRate & " Hz")
+  playAudio()
+else:
+  print("Failed to initialize audio")
 ```
 
 ```nim on:render
@@ -111,7 +114,7 @@ for i in 0..<barCount:
 
 # Generate and queue audio samples
 var samplesToGenerate = 2048
-var audioBuffer = newSeq[float32](samplesToGenerate * 2)  # Stereo
+var audioBuffer = newSeq[float](samplesToGenerate * 2)  # Stereo
 
 for i in 0..<samplesToGenerate:
   # Generate sine wave sample

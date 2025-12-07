@@ -9,9 +9,10 @@ import strutils, math, times
 import platform/platform_interface
 import platform/pixel_types
 import platform/render3d_interface
+import platform/audio
 import storie_core
 import src/nimini
-export platform_interface, pixel_types, render3d_interface, storie_core, nimini
+export platform_interface, pixel_types, render3d_interface, audio, storie_core, nimini
 
 # Backend selection: raylib by default, SDL3 with -d:sdl3
 when defined(sdl3):
@@ -125,6 +126,12 @@ else:
   var gRenderer3D: RaylibRenderer3D
 var gCamera: Camera3D
 var gModelMatrix: Mat4 = identity()
+
+# Audio system globals
+var gAudioSystem: AudioSystem = nil
+var gAudioDevice: AudioDevice = nil
+var gAudioStream: AudioStream = nil
+var gAudioInitialized: bool = false
 
 # ================================================================
 # NIMINI WRAPPERS - Bridge storie functions to Nimini
@@ -582,6 +589,122 @@ proc clear3D(env: ref Env; args: seq[Value]): Value {.nimini.} =
   gRenderer3D.beginFrame3D(r, g, b)
   return valNil()
 
+# ================================================================
+# AUDIO NIMINI WRAPPERS
+# ================================================================
+
+proc initAudio(env: ref Env; args: seq[Value]): Value {.nimini.} =
+  ## Initialize audio system
+  ## initAudio(sampleRate, channels, bufferSize)
+  if gAudioInitialized:
+    return valBool(true)
+  
+  let sampleRate = if args.len > 0: valueToInt(args[0]) else: 48000
+  let channels = if args.len > 1: valueToInt(args[1]) else: 2
+  let bufferSize = if args.len > 2: valueToInt(args[2]) else: 4096
+  
+  gAudioSystem = createAudioSystem()
+  if not gAudioSystem.initAudio():
+    echo "Failed to initialize audio system"
+    return valBool(false)
+  
+  # Create audio spec
+  var spec = AudioSpec(
+    sampleRate: sampleRate.int32,
+    channels: channels.int32,
+    format: afF32,  # Use float32 for easier scripting
+    bufferSize: bufferSize.int32
+  )
+  
+  # Open device
+  gAudioDevice = gAudioSystem.openDevice(spec)
+  
+  # Create stream
+  gAudioStream = gAudioSystem.createStream(spec)
+  
+  # For SDL3: bind stream to device
+  when defined(sdl3):
+    if not gAudioSystem.bindStream(gAudioDevice, gAudioStream):
+      echo "Failed to bind audio stream"
+      return valBool(false)
+  
+  gAudioInitialized = true
+  return valBool(true)
+
+proc queueAudio(env: ref Env; args: seq[Value]): Value {.nimini.} =
+  ## Queue audio samples for playback
+  ## queueAudio(audioBuffer) - buffer should be a sequence of float values
+  if not gAudioInitialized or gAudioStream.isNil:
+    return valBool(false)
+  
+  if args.len == 0:
+    return valBool(false)
+  
+  let bufferVal = args[0]
+  if bufferVal.kind != vkArray:
+    return valBool(false)
+  
+  # Convert Nimini array to float32 array
+  var audioData: seq[float32]
+  for item in bufferVal.arr:
+    let sample = case item.kind
+      of vkFloat: item.f.float32
+      of vkInt: item.i.float32
+      else: 0.0'f32
+    audioData.add(sample)
+  
+  if audioData.len == 0:
+    return valBool(false)
+  
+  # Queue the data
+  let frames = audioData.len div 2  # Assuming stereo
+  let success = gAudioSystem.putStreamData(gAudioStream, addr audioData[0], frames.int32)
+  
+  return valBool(success)
+
+proc playAudio(env: ref Env; args: seq[Value]): Value {.nimini.} =
+  ## Start audio playback
+  if not gAudioInitialized or gAudioStream.isNil:
+    return valNil()
+  
+  gAudioSystem.playStream(gAudioStream)
+  return valNil()
+
+proc pauseAudio(env: ref Env; args: seq[Value]): Value {.nimini.} =
+  ## Pause audio playback
+  if not gAudioInitialized or gAudioStream.isNil:
+    return valNil()
+  
+  gAudioSystem.pauseStream(gAudioStream)
+  return valNil()
+
+proc stopAudio(env: ref Env; args: seq[Value]): Value {.nimini.} =
+  ## Stop audio playback
+  if not gAudioInitialized or gAudioStream.isNil:
+    return valNil()
+  
+  gAudioSystem.stopStream(gAudioStream)
+  return valNil()
+
+proc shutdownAudio(env: ref Env; args: seq[Value]): Value {.nimini.} =
+  ## Shutdown audio system
+  if not gAudioInitialized:
+    return valNil()
+  
+  if not gAudioStream.isNil:
+    gAudioSystem.destroyStream(gAudioStream)
+    gAudioStream = nil
+  
+  if not gAudioDevice.isNil:
+    gAudioSystem.closeDevice(gAudioDevice)
+    gAudioDevice = nil
+  
+  gAudioSystem.shutdownAudio()
+  gAudioSystem = nil
+  gAudioInitialized = false
+  
+  return valNil()
+
 proc createNiminiContext(): NiminiContext =
   ## Create a Nimini interpreter context with exposed APIs
   initRuntime()
@@ -608,7 +731,9 @@ proc createNiminiContext(): NiminiContext =
     # 3D rendering
     enable3D, setCamera, setCameraFov,
     resetTransform, translate3D, rotate3D, scale3D,
-    drawCube, drawSphere, clear3D
+    drawCube, drawSphere, clear3D,
+    # Audio
+    initAudio, queueAudio, playAudio, pauseAudio, stopAudio, shutdownAudio
   )
   
   # Register math aliases

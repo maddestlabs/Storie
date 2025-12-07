@@ -4,15 +4,8 @@
 import audio_interface
 export audio_interface
 
-when defined(useRaylib):
-  import raylib/raylib_audio
-  export raylib_audio
-  
-  proc createAudioSystem*(): AudioSystem =
-    ## Create audio system for current backend (Raylib)
-    createRaylibAudioSystem()
-
-elif defined(useSdl) or defined(useSdlGpu):
+when defined(sdl3) or defined(useSdl) or defined(useSdlGpu):
+  # SDL3 backend
   import sdl/sdl_audio
   export sdl_audio
   
@@ -21,4 +14,10 @@ elif defined(useSdl) or defined(useSdlGpu):
     createSdlAudioSystem()
 
 else:
-  {.error: "No audio backend selected. Define useRaylib or useSdl".}
+  # Default to Raylib (matches storie.nim backend selection)
+  import raylib/raylib_audio
+  export raylib_audio
+  
+  proc createAudioSystem*(): AudioSystem =
+    ## Create audio system for current backend (Raylib)
+    createRaylibAudioSystem()

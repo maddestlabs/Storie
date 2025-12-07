@@ -51,7 +51,7 @@ proc toSdlAudioSpec(spec: AudioSpec): SDL_AudioSpec =
 
 method initAudio*(sys: SdlAudioSystem): bool =
   ## Initialize SDL audio subsystem
-  if (SDL_Init(SDL_INIT_AUDIO) and SDL_INIT_AUDIO) != 0:
+  if SDL_Init(SDL_INIT_AUDIO) != 0:
     return false
   sys.initialized = true
   return true

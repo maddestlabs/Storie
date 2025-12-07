@@ -48,8 +48,8 @@ proc LoadAudioStream*(sampleRate: cuint, sampleSize: cuint,
 proc UnloadAudioStream*(stream: RlAudioStream) {.importc, header: "raylib.h".}
   ## Unload audio stream and free memory
 
-proc IsAudioStreamReady*(stream: RlAudioStream): bool {.importc, header: "raylib.h".}
-  ## Checks if an audio stream is ready
+proc IsAudioStreamValid*(stream: RlAudioStream): bool {.importc, header: "raylib.h".}
+  ## Checks if an audio stream is valid (raylib 5.0+ renamed from IsAudioStreamReady)
 
 proc UpdateAudioStream*(stream: RlAudioStream, data: pointer, 
                         frameCount: cint) {.importc, header: "raylib.h".}
