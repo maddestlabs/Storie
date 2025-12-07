@@ -48,6 +48,16 @@ Examples:
 The compiled files will be placed in the specified output directory as:
   - ${REPO_NAME}-raylib.js
   - ${REPO_NAME}-raylib.wasm
+  - ${REPO_NAME}-raylib.data    (if docs/assets/ exists)
+
+Assets:
+  If docs/assets/ folder exists, all files are automatically preloaded.
+  Access them at runtime with /assets/ prefix:
+    - Audio: LoadSound("/assets/audio/sound.wav")
+    - Images: LoadTexture("/assets/images/sprite.png")
+    - Fonts: LoadFont("/assets/fonts/custom.ttf")
+  
+  Generate test audio files: ./generate-test-audio.sh
 
 Note: Use build-web-sdl.sh for SDL3 backend.
 
@@ -142,6 +152,13 @@ NIM_OPTS="c
 echo "Using Raylib backend for WASM..."
 RAYLIB_LIB="build-wasm/vendor/raylib-build/raylib/libraylib.a"
 
+# Check if assets folder exists and preload it
+PRELOAD_ARGS=""
+if [ -d "docs/assets" ]; then
+    echo "Preloading assets from docs/assets..."
+    PRELOAD_ARGS="--preload-file docs/assets@/assets"
+fi
+
 export EMCC_CFLAGS="-s USE_GLFW=3 \
   -s ALLOW_MEMORY_GROWTH=1 \
   -s TOTAL_MEMORY=67108864 \
@@ -152,6 +169,7 @@ export EMCC_CFLAGS="-s USE_GLFW=3 \
   -s MODULARIZE=0 \
   -s EXPORT_NAME='Module' \
   -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap','UTF8ToString','FS'] \
+  $PRELOAD_ARGS \
   -DPLATFORM_WEB \
   -DGRAPHICS_API_OPENGL_ES2 \
   $RAYLIB_LIB"

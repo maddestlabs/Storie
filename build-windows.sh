@@ -56,7 +56,7 @@ Output: ${REPO_NAME}.exe (Windows x64 executable with D3D12 and text support)
 EOF
 }
 
-RELEASE_MODE="-d:release"
+RELEASE_MODE="-d:release --opt:size"
 BUILD_DIR="build-win/vendor"
 
 # Parse arguments
@@ -71,7 +71,7 @@ while [[ $# -gt 0 ]]; do
             exit 0
             ;;
         -r|--release)
-            RELEASE_MODE="-d:release"
+            RELEASE_MODE="-d:release --opt:size"
             shift
             ;;
         --debug)

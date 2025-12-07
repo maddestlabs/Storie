@@ -56,6 +56,33 @@ proc parseBlock(p: var Parser): seq[Stmt]
 
 # prefix parsing --------------------------------------------------------
 
+proc parseType(p: var Parser): TypeNode =
+  ## Parse a type annotation
+  let t = p.cur()
+  
+  if t.kind != tkIdent:
+    quit "Parse Error: Expected type name at line " & $t.line
+  
+  let typeName = t.lexeme
+  discard p.advance()
+  
+  # Check for ptr prefix
+  if typeName == "ptr":
+    let innerType = parseType(p)
+    return newPointerType(innerType)
+  
+  # Check for generic types like UncheckedArray[T] or seq[T]
+  if p.cur().kind == tkLBracket:
+    discard p.advance()
+    var params: seq[TypeNode] = @[]
+    params.add(parseType(p))
+    while match(p, tkComma):
+      params.add(parseType(p))
+    discard expect(p, tkRBracket, "Expected ']'")
+    return newGenericType(typeName, params)
+  
+  return newSimpleType(typeName)
+
 proc parsePrefix(p: var Parser): Expr =
   let t = p.cur()
 
@@ -84,6 +111,21 @@ proc parsePrefix(p: var Parser): Expr =
       discard p.advance()
       let v = parseExpr(p, 100)
       return newUnaryOp("not", v, t.line, t.col)
+    elif t.lexeme == "cast":
+      # Parse cast[Type](expr)
+      discard p.advance()
+      discard expect(p, tkLBracket, "Expected '[' after cast")
+      let castType = parseType(p)
+      discard expect(p, tkRBracket, "Expected ']'")
+      discard expect(p, tkLParen, "Expected '(' after cast type")
+      let expr = parseExpr(p)
+      discard expect(p, tkRParen, "Expected ')'")
+      return newCast(castType, expr, t.line, t.col)
+    elif t.lexeme == "addr":
+      # Parse addr expr
+      discard p.advance()
+      let expr = parseExpr(p, 100)
+      return newAddr(expr, t.line, t.col)
 
     discard p.advance()
     if p.cur().kind == tkLParen:
@@ -164,13 +206,25 @@ proc parseExpr(p: var Parser; prec=0): Expr =
 
 # statements ------------------------------------------------------------
 
-proc parseVarStmt(p: var Parser; isLet: bool): Stmt =
+proc parseVarStmt(p: var Parser; isLet: bool; isConst: bool = false): Stmt =
   let kw = advance(p)
   let nameTok = expect(p, tkIdent, "Expected identifier")
+  
+  # Optional type annotation
+  var typeAnnotation: TypeNode = nil
+  if p.cur().kind == tkColon:
+    discard p.advance()
+    typeAnnotation = parseType(p)
+  
   discard expect(p, tkOp, "Expected '='")
   let val = parseExpr(p)
-  if isLet: newLet(nameTok.lexeme, val, kw.line, kw.col)
-  else:     newVar(nameTok.lexeme, val, kw.line, kw.col)
+  
+  if isConst:
+    newConst(nameTok.lexeme, val, typeAnnotation, kw.line, kw.col)
+  elif isLet:
+    newLet(nameTok.lexeme, val, typeAnnotation, kw.line, kw.col)
+  else:
+    newVar(nameTok.lexeme, val, typeAnnotation, kw.line, kw.col)
 
 proc parseAssign(p: var Parser; nameTok: Token): Stmt =
   discard p.advance()  # Skip the identifier (already captured in nameTok)
@@ -250,11 +304,39 @@ proc parseProc(p: var Parser): Stmt =
         break
 
   discard expect(p, tkRParen, "Expected ')'")
+  
+  # Optional return type - look ahead to distinguish from proc body colon
+  var returnType: TypeNode = nil
+  if p.cur().kind == tkColon:
+    # Save position to potentially backtrack
+    let colonPos = p.pos
+    discard p.advance()
+    # If next token is an identifier, it's a return type
+    if p.cur().kind == tkIdent and p.cur().lexeme notin ["defer", "if", "for", "while", "return"]:
+      returnType = parseType(p)
+    else:
+      # It was the proc body colon, backtrack
+      p.pos = colonPos
+  
+  # Optional pragmas {.cdecl.}
+  var pragmas: seq[string] = @[]
+  if p.cur().kind == tkLBrace:
+    discard p.advance()
+    if p.cur().kind == tkDot:
+      discard p.advance()
+      if p.cur().kind == tkIdent:
+        pragmas.add(p.cur().lexeme)
+        discard p.advance()
+      if p.cur().kind == tkDot:
+        discard p.advance()
+      if p.cur().kind == tkRBrace:
+        discard p.advance()
+  
   discard expect(p, tkColon, "Expected ':'")
   discard expect(p, tkNewline, "Expected newline")
 
   let body = parseBlock(p)
-  newProc(nameTok.lexeme, params, body, tok.line, tok.col)
+  newProc(nameTok.lexeme, params, body, returnType, pragmas, tok.line, tok.col)
 
 proc parseReturn(p: var Parser): Stmt =
   let tok = advance(p)
@@ -279,8 +361,20 @@ proc parseStmt(p: var Parser): Stmt =
 
   if t.kind == tkIdent:
     case t.lexeme
-    of "var": return parseVarStmt(p, false)
-    of "let": return parseVarStmt(p, true)
+    of "var": return parseVarStmt(p, false, false)
+    of "let": return parseVarStmt(p, true, false)
+    of "const": return parseVarStmt(p, false, true)
+    of "defer":
+      discard p.advance()
+      discard expect(p, tkColon, "Expected ':' after defer")
+      let deferredStmt = parseStmt(p)
+      return newDefer(deferredStmt, t.line, t.col)
+    of "type":
+      discard p.advance()
+      let typeName = expect(p, tkIdent, "Expected type name").lexeme
+      discard expect(p, tkOp, "Expected '='")
+      let typeValue = parseType(p)
+      return newType(typeName, typeValue, t.line, t.col)
     of "if": return parseIf(p)
     of "for": return parseFor(p)
     of "while": return parseWhile(p)

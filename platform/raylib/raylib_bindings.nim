@@ -11,6 +11,7 @@ import raylib_bindings/input
 import raylib_bindings/shapes
 import raylib_bindings/text
 import raylib_bindings/models
+import raylib_bindings/audio
 
 export build_config
 export types
@@ -19,6 +20,7 @@ export input
 export shapes
 export text
 export models
+export audio
 
 # Helper constructors
 proc Color*(r, g, b, a: uint8): Color =
