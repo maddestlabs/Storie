@@ -168,7 +168,8 @@ export EMCC_CFLAGS="-s USE_GLFW=3 \
   -s ENVIRONMENT=web \
   -s MODULARIZE=0 \
   -s EXPORT_NAME='Module' \
-  -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap','UTF8ToString','FS'] \
+  -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap','UTF8ToString','FS','HEAPF32','HEAP16','HEAP8'] \
+  -s EXPORTED_FUNCTIONS=['_main','_malloc','_free','_setWaitingForGist','_loadMarkdownFromJS'] \
   $PRELOAD_ARGS \
   -DPLATFORM_WEB \
   -DGRAPHICS_API_OPENGL_ES2 \

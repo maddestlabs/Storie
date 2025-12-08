@@ -132,6 +132,8 @@ var gAudioSystem: AudioSystem = nil
 var gAudioDevice: AudioDevice = nil
 var gAudioStream: AudioStream = nil
 var gAudioInitialized: bool = false
+var gAudioPlaying: bool = false
+var gAudioPendingInit: bool = false  # Track if init was attempted but needs retry
 
 # ================================================================
 # NIMINI WRAPPERS - Bridge storie functions to Nimini
@@ -609,21 +611,29 @@ proc initAudio(env: ref Env; args: seq[Value]): Value {.nimini.} =
     return valBool(false)
   
   # Create audio spec
+  # Use int16 for Raylib (better web compatibility), float32 for SDL
+  when defined(raylib):
+    const audioFormat = afS16
+  else:
+    const audioFormat = afF32
+  
   var spec = AudioSpec(
     sampleRate: sampleRate.int32,
     channels: channels.int32,
-    format: afF32,  # Use float32 for easier scripting
+    format: audioFormat,
     bufferSize: bufferSize.int32
   )
   
-  # Open device
-  gAudioDevice = gAudioSystem.openDevice(spec)
-  
-  # Create stream
+  # Create stream (for SDL3, this also opens the device automatically)
   gAudioStream = gAudioSystem.createStream(spec)
   
-  # For SDL3: bind stream to device
-  when defined(sdl3):
+  if gAudioStream.isNil:
+    echo "Failed to create audio stream"
+    return valBool(false)
+  
+  # For non-SDL3 backends, open and bind device separately
+  when not defined(sdl3):
+    gAudioDevice = gAudioSystem.openDevice(spec)
     if not gAudioSystem.bindStream(gAudioDevice, gAudioStream):
       echo "Failed to bind audio stream"
       return valBool(false)
@@ -644,23 +654,67 @@ proc queueAudio(env: ref Env; args: seq[Value]): Value {.nimini.} =
   if bufferVal.kind != vkArray:
     return valBool(false)
   
-  # Convert Nimini array to float32 array
-  var audioData: seq[float32]
-  for item in bufferVal.arr:
-    let sample = case item.kind
-      of vkFloat: item.f.float32
-      of vkInt: item.i.float32
-      else: 0.0'f32
-    audioData.add(sample)
+  # Convert Nimini array to appropriate format
+  when defined(raylib):
+    # Raylib: convert to int16 for better web compatibility
+    var audioData: seq[int16]
+    for item in bufferVal.arr:
+      let sample = case item.kind
+        of vkFloat: item.f
+        of vkInt: item.i.float
+        else: 0.0
+      # Convert -1.0..1.0 float to int16 range
+      let scaled = clamp(sample * 32767.0, -32767.0, 32767.0)
+      audioData.add(scaled.int16)
+  else:
+    # SDL: use float32
+    var audioData: seq[float32]
+    for item in bufferVal.arr:
+      let sample = case item.kind
+        of vkFloat: item.f.float32
+        of vkInt: item.i.float32
+        else: 0.0'f32
+      audioData.add(sample)
   
   if audioData.len == 0:
     return valBool(false)
   
   # Queue the data
   let frames = audioData.len div 2  # Assuming stereo
-  let success = gAudioSystem.putStreamData(gAudioStream, addr audioData[0], frames.int32)
   
-  return valBool(success)
+  # Try putStreamData first (SDL), fall back to updateStream (Raylib)
+  let success = gAudioSystem.putStreamData(gAudioStream, addr audioData[0], frames.int32)
+  if not success:
+    # For Raylib: update stream with new data
+    # Note: UpdateAudioStream in Raylib handles buffering internally
+    gAudioSystem.updateStream(gAudioStream, addr audioData[0], frames.int32)
+  
+  # For Emscripten/SDL3, try to re-initialize if not ready yet
+  # (browser audio requires event loop to be running)
+  when defined(emscripten) and defined(sdl3):
+    if gAudioStream.isNil:
+      echo "Audio not ready yet, attempting lazy init..."
+      # Try to initialize now that event loop is running
+      var spec = AudioSpec(
+        sampleRate: 48000,
+        channels: 2,
+        format: afF32,
+        bufferSize: 4096
+      )
+      gAudioStream = gAudioSystem.createStream(spec)
+      if gAudioStream.isNil:
+        echo "Still can't create audio stream (may need user interaction)"
+        return valBool(false)
+      echo "Audio stream created successfully after event loop started"
+  
+  # Auto-start playback on first queue (do this BEFORE putting data for SDL3)
+  if not gAudioPlaying:
+    gAudioSystem.playStream(gAudioStream)
+    gAudioPlaying = true
+    when defined(emscripten):
+      echo "Audio playback started"
+  
+  return valBool(true)
 
 proc playAudio(env: ref Env; args: seq[Value]): Value {.nimini.} =
   ## Start audio playback
@@ -708,6 +762,9 @@ proc shutdownAudio(env: ref Env; args: seq[Value]): Value {.nimini.} =
 proc createNiminiContext(): NiminiContext =
   ## Create a Nimini interpreter context with exposed APIs
   initRuntime()
+  
+  # Register standard library functions
+  registerSeqOps()
   
   # Register type conversion functions
   registerNative("int", nimini_int)

@@ -2,15 +2,19 @@
 
 Storie is a hackable engine designed for fast prototyping with a clear path to native compilation.
 
-- Built with [Nim](https://nim-lang.org/)
-- Write markdown with executable code blocks in various, simplified languages via [Nimini](https://github.com/maddestlabs/nimini).
+- Built with [Nim](https://nim-lang.org/). Readable code, fast compilation and small binaries.
+- Write markdown with executable code blocks in simplified Nim via [Nimini](https://github.com/maddestlabs/nimini).
 - Code with [raylib](https://www.raylib.com/) as an entry point.
-- Translates directly to [SDL3](https://wiki.libsdl.org/SDL3/FrontPage) for more robust rendering and platform support.
+- Auto-converts to [SDL3](https://wiki.libsdl.org/SDL3/FrontPage) for more robust rendering and platform support.
 - Compiles to WASM (via Emscripten) by default with easy compilation to native.
 
 Swap backends (Raylib/SDL3), modify anything, break things. It's made for tinkerers who want zero constraints.
 
 Check it out live: [Demo](https://maddestlabs.github.io/storie/)
+
+GitHub Gist examples:
+- [Audio - Sinewave](https://maddestlabs.github.io/storie?gist=b515ad4b2cf3897bd787e8b5e45c7024&platform=sdl-full) | [Source Gist](https://gist.github.com/R3V1Z3/b515ad4b2cf3897bd787e8b5e45c7024)
+- [3D - OpenGL](https://maddestlabs.github.io/storie?gist=1fc7e8ae84beee67a5b90cb0866e5d7c&platform=sdl-full) | [Source Gist](https://gist.github.com/R3V1Z3/1fc7e8ae84beee67a5b90cb0866e5d7c)
 
 The engine is built around GitHub features. No need to actually install Nim, or anything for that matter. Just create a new repo from the Storie template, update index.md with your own content and it'll auto-compile for the web. Enable GitHub Pages and you'll see that content served live within moments. GitHub Actions take care of the full compilation process.
 
@@ -20,7 +24,6 @@ Core engine features:
 - **Cross-Platform** - Runs natively and in web browsers via WebAssembly
 - **Fast-Prototyping** - Write code on GitHub Gist and see it run live. [Example](https://maddestlabs.github.io/storie?gist=bd236fe257f02e371e04f7d9899be0c2) | [Source Gist](https://gist.github.com/R3V1Z3/bd236fe257f02e371e04f7d9899be0c2)
 - **SDL3-powered** - Code in Raylib, get the same code rendered via SDL3. [Example](https://maddestlabs.github.io/storie?gist=bd236fe257f02e371e04f7d9899be0c2&platform=sdl-full)
-- **Built with Nim** - Highly readable code that compiles fast and produces small binaries/executables
 
 ## Getting Started
 

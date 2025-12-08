@@ -28,11 +28,11 @@ import build_config
 import types
 export types
 
-# Initialization constants
-var
-  SDL_INIT_VIDEO* {.importc, header: "SDL3/SDL_init.h".}: uint32
-  SDL_INIT_AUDIO* {.importc, header: "SDL3/SDL_init.h".}: uint32
-  SDL_INIT_EVENTS* {.importc, header: "SDL3/SDL_init.h".}: uint32
+# Initialization constants (SDL3 values)
+const
+  SDL_INIT_VIDEO* = 0x00000020'u32
+  SDL_INIT_AUDIO* = 0x00000010'u32
+  SDL_INIT_EVENTS* = 0x00004000'u32
 
 # Window flags
 var
@@ -51,6 +51,7 @@ var
 
 # Core initialization and shutdown
 proc SDL_Init*(flags: uint32): cint {.importc, header: "SDL3/SDL_init.h".}
+proc SDL_InitSubSystem*(flags: uint32): cint {.importc, header: "SDL3/SDL_init.h".}
 proc SDL_Quit*() {.importc, header: "SDL3/SDL_init.h".}
 
 # Window management

@@ -51,10 +51,19 @@ proc toSdlAudioSpec(spec: AudioSpec): SDL_AudioSpec =
 
 method initAudio*(sys: SdlAudioSystem): bool =
   ## Initialize SDL audio subsystem
-  if SDL_Init(SDL_INIT_AUDIO) != 0:
-    return false
-  sys.initialized = true
-  return true
+  # For web builds, SDL3 audio is initialized lazily when opening device
+  # Explicit init not needed and actually fails in Emscripten
+  when defined(emscripten):
+    echo "SDL3 audio ready (lazy init on device open)"
+    sys.initialized = true
+    return true
+  else:
+    # Native builds need explicit init
+    if SDL_InitSubSystem(SDL_INIT_AUDIO) != 0:
+      echo "SDL_InitSubSystem(AUDIO) failed: ", SDL_GetError()
+      return false
+    sys.initialized = true
+    return true
 
 method shutdownAudio*(sys: SdlAudioSystem) =
   ## Cleanup SDL audio
@@ -125,18 +134,35 @@ method resumeDevice*(sys: SdlAudioSystem, device: AudioDevice) =
 # ================================================================
 
 method createStream*(sys: SdlAudioSystem, spec: AudioSpec): AudioStream =
-  ## Create an SDL audio stream
+  ## Create an SDL audio stream using SDL3's simplified API
   var sdlSpec = toSdlAudioSpec(spec)
   
-  let sdlStream = SDL_CreateAudioStream(addr sdlSpec, addr sdlSpec)
+  # Use SDL_OpenAudioDeviceStream for the simplified SDL3 pattern
+  # This creates a stream already bound to a device
+  let sdlStream = SDL_OpenAudioDeviceStream(
+    SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,
+    addr sdlSpec,
+    nil,  # no callback
+    nil   # no userdata
+  )
+  
   if sdlStream == nil:
+    when defined(emscripten):
+      echo "SDL_OpenAudioDeviceStream failed: ", SDL_GetError()
     return nil
+  
+  when defined(emscripten):
+    echo "SDL audio stream created successfully"
+    echo "  Sample rate: ", spec.sampleRate
+    echo "  Channels: ", spec.channels
+    echo "  Format: ", spec.format
+    echo "  Buffer size: ", spec.bufferSize
   
   var stream = SdlAudioStream()
   stream.handle = AudioStreamHandle(sdlStream)
   stream.spec = spec
   stream.sdlStream = sdlStream
-  stream.boundDevice = nil
+  stream.boundDevice = nil  # Not needed with OpenAudioDeviceStream
   
   sys.streams.add(stream)
   return stream
@@ -169,10 +195,11 @@ method bindStream*(sys: SdlAudioSystem, device: AudioDevice,
   return false
 
 method playStream*(sys: SdlAudioSystem, stream: AudioStream) =
-  ## Start playing (resume device if bound)
+  ## Start playing using SDL3's stream-based resume
   let sdlStream = SdlAudioStream(stream)
-  if sdlStream.boundDevice != nil:
-    sys.resumeDevice(sdlStream.boundDevice)
+  discard SDL_ResumeAudioStreamDevice(sdlStream.sdlStream)
+  when defined(emscripten):
+    echo "Audio stream resumed"
 
 method stopStream*(sys: SdlAudioSystem, stream: AudioStream) =
   ## Stop stream (pause device if bound)
@@ -197,7 +224,11 @@ method putStreamData*(sys: SdlAudioSystem, stream: AudioStream,
   ## Put audio data into the stream
   let sdlStream = SdlAudioStream(stream)
   let bytes = frames * getBytesPerFrame(stream.spec)
-  return SDL_PutAudioStreamData(sdlStream.sdlStream, data, cint(bytes))
+  let result = SDL_PutAudioStreamData(sdlStream.sdlStream, data, cint(bytes))
+  when defined(emscripten):
+    let queued = SDL_GetAudioStreamQueued(sdlStream.sdlStream)
+    echo "Put ", bytes, " bytes, now queued: ", queued, " bytes, result: ", result
+  return result
 
 method getStreamData*(sys: SdlAudioSystem, stream: AudioStream,
                       data: pointer, frames: int32): int32 =

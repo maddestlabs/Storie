@@ -16,7 +16,7 @@ var phase = 0.0
 # Initialize audio
 if initAudio(sampleRate, 2, 4096):
   print("Audio initialized at " & $sampleRate & " Hz")
-  playAudio()
+  print("Audio will start on first buffer queue")
 else:
   print("Failed to initialize audio")
 ```
@@ -108,7 +108,7 @@ fillRect(200, meterY, meterWidth, 30)
 # Generate and queue audio samples
 var samplesToGenerate = 2048
 var samplesTimesTwo = samplesToGenerate * 2
-var audioBuffer = newSeq[float](samplesTimesTwo)  # Stereo
+var audioBuffer = newSeq(samplesTimesTwo)  # Stereo
 
 for i in 0..<samplesToGenerate:
   # Generate sine wave sample

@@ -149,6 +149,21 @@ proc getByKey*(v: Value; key: string): Value =
     return v.map[key]
   return valNil()
 
+# Array access operators
+proc `[]`*(v: Value; index: int): Value =
+  if v.kind != vkArray:
+    quit "Runtime Error: Cannot index non-array value"
+  if index < 0 or index >= v.arr.len:
+    quit "Runtime Error: Array index out of bounds: " & $index & " (length: " & $v.arr.len & ")"
+  return v.arr[index]
+
+proc `[]=`*(v: Value; index: int; val: Value) =
+  if v.kind != vkArray:
+    quit "Runtime Error: Cannot set index on non-array value"
+  if index < 0 or index >= v.arr.len:
+    quit "Runtime Error: Array index out of bounds: " & $index & " (length: " & $v.arr.len & ")"
+  v.arr[index] = val
+
 # ------------------------------------------------------------------------------
 # Environment
 # ------------------------------------------------------------------------------

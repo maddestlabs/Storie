@@ -62,14 +62,18 @@ proc SDL_ResumeAudioDevice*(dev: SDL_AudioDeviceID): bool {.importc, header: "SD
 
 # Audio stream management
 proc SDL_CreateAudioStream*(src_spec: ptr SDL_AudioSpec, dst_spec: ptr SDL_AudioSpec): ptr SDL_AudioStream {.importc, header: "SDL3/SDL_audio.h".}
+proc SDL_OpenAudioDeviceStream*(devid: SDL_AudioDeviceID, spec: ptr SDL_AudioSpec, 
+                                 callback: pointer, userdata: pointer): ptr SDL_AudioStream {.importc, header: "SDL3/SDL_audio.h".}
 proc SDL_DestroyAudioStream*(stream: ptr SDL_AudioStream) {.importc, header: "SDL3/SDL_audio.h".}
 proc SDL_BindAudioStream*(devid: SDL_AudioDeviceID, stream: ptr SDL_AudioStream): bool {.importc, header: "SDL3/SDL_audio.h".}
 proc SDL_UnbindAudioStream*(stream: ptr SDL_AudioStream) {.importc, header: "SDL3/SDL_audio.h".}
+proc SDL_ResumeAudioStreamDevice*(stream: ptr SDL_AudioStream): bool {.importc, header: "SDL3/SDL_audio.h".}
 
 # Stream data operations
 proc SDL_PutAudioStreamData*(stream: ptr SDL_AudioStream, buf: pointer, len: cint): bool {.importc, header: "SDL3/SDL_audio.h".}
 proc SDL_GetAudioStreamData*(stream: ptr SDL_AudioStream, buf: pointer, len: cint): cint {.importc, header: "SDL3/SDL_audio.h".}
 proc SDL_GetAudioStreamAvailable*(stream: ptr SDL_AudioStream): cint {.importc, header: "SDL3/SDL_audio.h".}
+proc SDL_GetAudioStreamQueued*(stream: ptr SDL_AudioStream): cint {.importc, header: "SDL3/SDL_audio.h".}
 proc SDL_ClearAudioStream*(stream: ptr SDL_AudioStream): bool {.importc, header: "SDL3/SDL_audio.h".}
 
 # Query and device enumeration

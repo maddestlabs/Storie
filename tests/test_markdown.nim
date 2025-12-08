@@ -58,10 +58,12 @@ proc testMarkdownFile(filename: string) =
   echo ""
   
   # Process each code block
+  var hasErrors = false
+  
   for i, codeBlock in codeBlocks:
-    echo "--- Code Block ", i + 1, " ---"
-    echo "Event: ", codeBlock.event
-    echo "Lines: ", codeBlock.code.split('\n').len
+    echo "--- Code Block ", i + 1, " (", codeBlock.event, ") ---"
+    echo "Markdown line: ", codeBlock.lineNumber
+    echo "Code lines: ", codeBlock.code.split('\n').len
     echo ""
     
     # Try to compile with Nimini
@@ -75,40 +77,66 @@ proc testMarkdownFile(filename: string) =
       echo "  Parsed successfully!"
       echo ""
     except Exception as e:
-      echo "  ERROR: ", e.msg
+      echo "  ✗ ERROR: ", e.msg
       echo ""
       
       # Show problematic code section
       let lines = codeBlock.code.split('\n')
       
+      # Always show context around error
+      echo "  Code context:"
+      echo "  " & "=".repeat(70)
+      
       # Try to extract line number from error message
+      var errorLine = 0
       if "line" in e.msg:
         # Try to extract line number from error
-        var lineNum = 0
         let parts = e.msg.split(" ")
         for j, part in parts:
           if part == "line" and j + 1 < parts.len:
             try:
-              lineNum = parseInt(parts[j + 1])
+              errorLine = parseInt(parts[j + 1])
             except:
               discard
+      
+      if errorLine > 0 and errorLine <= lines.len:
+        # Show context around the error line
+        let startLine = max(1, errorLine - 3)
+        let endLine = min(lines.len, errorLine + 3)
         
-        if lineNum > 0 and lineNum <= lines.len:
-          echo "  Problem area (around line ", lineNum, "):"
-          echo "  " & "-".repeat(50)
-          let startLine = max(1, lineNum - 2)
-          let endLine = min(lines.len, lineNum + 2)
-          
-          for lineIdx in startLine..endLine:
-            let marker = if lineIdx == lineNum: " >>> " else: "     "
-            echo "  ", marker, lineIdx, ": ", lines[lineIdx - 1]
-          echo "  " & "-".repeat(50)
+        for lineIdx in startLine..endLine:
+          let marker = if lineIdx == errorLine: " >>> " else: "     "
+          let lineNumStr = ($lineIdx).align(4)
+          echo "  ", marker, lineNumStr, ": ", lines[lineIdx - 1]
+      else:
+        # Show first 10 lines if we can't find the error line
+        echo "  First 10 lines of code block:"
+        for lineIdx in 1..min(10, lines.len):
+          let lineNumStr = ($lineIdx).align(4)
+          echo "       ", lineNumStr, ": ", lines[lineIdx - 1]
+        if lines.len > 10:
+          echo "       ... (", lines.len - 10, " more lines)"
+      
+      echo "  " & "=".repeat(70)
       
       echo ""
-      quit(1)
+      echo "  ⚠  Block starts at markdown line ", codeBlock.lineNumber
+      if errorLine > 0:
+        echo "  ⚠  Error is at code line ", errorLine, " (markdown line ~", codeBlock.lineNumber + errorLine, ")"
+      echo ""
+      
+      hasErrors = true
   
   echo "=" .repeat(60)
-  echo "All code blocks compiled successfully!"
+  
+  if hasErrors:
+    echo "❌ FAILED - Errors found in code blocks"
+    echo ""
+    quit(1)
+  else:
+    echo "✅ SUCCESS - All code blocks compiled successfully!"
+    echo ""
+    quit(0)
 
 when isMainModule:
   if paramCount() < 1:

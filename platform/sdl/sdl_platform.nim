@@ -50,11 +50,12 @@ method init*(p: SdlPlatform, enable3D: bool = false): bool =
   else:
     echo "Build type: SDL3 MINIMAL (no TTF)"
   
-  if SDL_Init(SDL_INIT_VIDEO or SDL_INIT_EVENTS) < 0:
+  # Initialize SDL with VIDEO, AUDIO, and EVENTS subsystems
+  if SDL_Init(SDL_INIT_VIDEO or SDL_INIT_AUDIO or SDL_INIT_EVENTS) < 0:
     echo "SDL_Init failed: ", SDL_GetError()
     return false
   
-  echo "SDL_Init succeeded"
+  echo "SDL_Init succeeded (VIDEO + AUDIO + EVENTS)"
   
   # Set OpenGL attributes if 3D is enabled
   if enable3D:
@@ -154,11 +155,11 @@ method init*(p: SdlPlatform, enable3D: bool = false): bool =
     # Load font - try multiple paths
     const fontSize = 16.0
     var fontPaths = @[
-      "/assets/AnomalyMono-Powerline.otf",  # Preloaded font for web builds
+      "/assets/Roboto-Regular.ttf",  # Preloaded Roboto font for web builds
       "/assets/fonts/Roboto-Regular.ttf",  # Google Fonts (if available)
       "/assets/fonts/RobotoMono-Regular.ttf",
-      "docs/assets/AnomalyMono-Powerline.otf",  # Native build paths
-      "assets/AnomalyMono-Powerline.otf"
+      "docs/assets/Roboto-Regular.ttf",  # Native build paths
+      "assets/Roboto-Regular.ttf"
     ]
     
     p.font = nil
