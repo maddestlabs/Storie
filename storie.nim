@@ -803,8 +803,10 @@ proc createNiminiContext(): NiminiContext =
 # PUBLIC API - Execute Nimini Code
 # ================================================================
 
-proc executeNiminiCode*(code: string): bool =
-  ## Execute Nimini code in the global context
+proc executeNiminiCode*(code: string, lifecycle: string = ""): bool =
+  ## Execute Nimini code with proper scoping based on lifecycle
+  ## - init blocks execute in global scope
+  ## - Other blocks execute in child scope (local variables don't pollute global)
   ## Returns true on success, false on error
   if niminiCtx.isNil:
     echo "Error: Nimini context not initialized"
@@ -833,7 +835,15 @@ proc executeNiminiCode*(code: string): bool =
     
     let tokens = tokenizeDsl(scriptCode)
     let program = parseDsl(tokens)
-    execProgram(program, niminiCtx.env)
+    
+    # Choose execution environment based on lifecycle
+    # init blocks use global scope, others use child scope
+    let execEnv = if lifecycle == "init":
+      niminiCtx.env  # Global scope for init
+    else:
+      newEnv(niminiCtx.env)  # Child scope for other blocks
+    
+    execProgram(program, execEnv)
     
     return true
   except Exception as e:

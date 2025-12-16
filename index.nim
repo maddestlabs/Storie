@@ -3,6 +3,7 @@
 
 import strutils, sequtils
 import storie
+import lib/storie_md
 
 # Native-only imports (not needed for WASM)
 when not defined(emscripten):
@@ -15,57 +16,6 @@ when defined(emscripten):
   {.emit: """
   #include <emscripten.h>
   """.}
-
-# ================================================================
-# MARKDOWN PARSER
-# ================================================================
-
-type
-  CodeBlock = object
-    code: string
-    lifecycle: string  # "render", "update", "init", "input", "shutdown"
-    language: string
-
-proc parseMarkdown(content: string): seq[CodeBlock] =
-  ## Parse Markdown content and extract Nim code blocks with lifecycle hooks
-  result = @[]
-  var lines = content.splitLines()
-  var i = 0
-  
-  while i < lines.len:
-    let line = lines[i].strip()
-    
-    # Look for code block start: ```nim or ``` nim
-    if line.startsWith("```") or line.startsWith("``` "):
-      var headerParts = line[3..^1].strip().split()
-      if headerParts.len > 0 and headerParts[0] == "nim":
-        var lifecycle = ""
-        var language = "nim"
-        
-        # Check for on:* attribute (e.g., on:render, on:update)
-        for part in headerParts:
-          if part.startsWith("on:"):
-            lifecycle = part[3..^1]
-            break
-        
-        # Extract code block content
-        var codeLines: seq[string] = @[]
-        inc i
-        while i < lines.len:
-          if lines[i].strip().startsWith("```"):
-            break
-          codeLines.add(lines[i])
-          inc i
-        
-        # Add the code block
-        let blk = CodeBlock(
-          code: codeLines.join("\n"),
-          lifecycle: lifecycle,
-          language: language
-        )
-        result.add(blk)
-    
-    inc i
 
 # ================================================================
 # LIFECYCLE MANAGEMENT
@@ -92,21 +42,21 @@ proc loadMarkdownContent(filePath: string): string =
     # WASM builds don't use file loading
     return ""
 
-proc loadAndParseMarkdown(markdownPath: string = ""): seq[CodeBlock] =
+proc loadAndParseMarkdown(markdownPath: string = ""): MarkdownDocument =
   ## Load and parse markdown from specified path or default index.md
   when defined(emscripten):
     # In WASM, embed the default markdown at compile time
     # (can be overridden via loadMarkdownFromJS)
     const mdContent = staticRead("index.md")
-    return parseMarkdown(mdContent)
+    return parseMarkdownDocument(mdContent)
   else:
     # Native: read from file (custom path or default index.md)
     let targetPath = if markdownPath.len > 0: markdownPath else: "index.md"
     let mdContent = loadMarkdownContent(targetPath)
     if mdContent.len > 0:
-      return parseMarkdown(mdContent)
+      return parseMarkdownDocument(mdContent)
     else:
-      return @[]
+      return MarkdownDocument()
 
 proc shouldWaitForGist(): bool =
   ## Check if JavaScript wants us to wait for a gist
@@ -138,7 +88,7 @@ proc runLifecycleBlocks(lifecycle: string) =
   var executedCount = 0
   for blk in storieCtx.codeBlocks:
     if blk.lifecycle == lifecycle:
-      discard executeNiminiCode(blk.code)
+      discard executeNiminiCode(blk.code, blk.lifecycle)
       executedCount += 1
   
   # Log render execution on first few frames to verify it's running
@@ -152,12 +102,12 @@ proc loadContent(mdContent: string) =
     storieCtx = StorieContext()
   
   # Parse the markdown
-  let newBlocks = parseMarkdown(mdContent)
+  let doc = parseMarkdownDocument(mdContent)
   
-  echo "Parsed ", newBlocks.len, " code blocks from markdown content"
+  echo "Parsed ", doc.codeBlocks.len, " code blocks from markdown content"
   
   # Replace code blocks (don't just assign, ensure it's a fresh reference)
-  storieCtx.codeBlocks = newBlocks
+  storieCtx.codeBlocks = doc.codeBlocks
   contentLoaded = true
   contentInitRun = false
   
